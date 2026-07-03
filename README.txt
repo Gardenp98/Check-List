@@ -40,4 +40,3 @@ icon-192.png, icon-512.png, icon-512-maskable.png)를 그대로 올리면 돼요
 - 나중에 진짜 .apk 파일까지 원하시면, 위 GitHub Pages 주소를
   https://www.pwabuilder.com 에 입력하면 무료로 apk를 만들어주는
   빌드 도구를 사용할 수 있어요 (Google Play 등록 없이 apk 파일만 받는 것도 가능).
-
