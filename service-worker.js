@@ -1,4 +1,4 @@
-const CACHE_NAME = "checklist-app-v1";
+const CACHE_NAME = "checklist-app-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -31,6 +31,25 @@ self.addEventListener("activate", function (event) {
 
 self.addEventListener("fetch", function (event) {
   if (event.request.method !== "GET") return;
+
+  var isHTML = event.request.mode === "navigate" ||
+    (event.request.headers.get("accept") || "").indexOf("text/html") !== -1;
+
+  if (isHTML) {
+    // network-first: always try to get the latest page; fall back to cache if offline
+    event.respondWith(
+      fetch(event.request)
+        .then(function (response) {
+          var copy = response.clone();
+          caches.open(CACHE_NAME).then(function (cache) { cache.put(event.request, copy); });
+          return response;
+        })
+        .catch(function () { return caches.match(event.request); })
+    );
+    return;
+  }
+
+  // other assets: cache-first, refresh in background
   event.respondWith(
     caches.match(event.request).then(function (cached) {
       var networkFetch = fetch(event.request)
