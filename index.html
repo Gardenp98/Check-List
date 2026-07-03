@@ -171,6 +171,7 @@
 
   /* ---------- Overlay / Sheet ---------- */
   .overlay{ position:fixed; inset:0; background:rgba(36,46,39,0.42); display:flex; align-items:flex-end; justify-content:center; z-index:50; }
+  .overlay[hidden]{ display:none; }
   .sheet{
     width:100%; max-width:480px; background:var(--paper); border-radius:22px 22px 0 0;
     padding: 18px 20px calc(env(safe-area-inset-bottom) + 20px);
