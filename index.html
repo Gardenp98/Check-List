@@ -69,6 +69,7 @@
     text-align:center; font-size:11px; font-weight:700; color:var(--ink-soft);
     margin-bottom:6px;
   }
+  .weekday-row span:first-child{ color:var(--stamp-deep); }
   .cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:3px; margin-bottom:8px;}
   .cal-cell{
     position:relative; aspect-ratio:1;
@@ -77,6 +78,8 @@
     cursor:pointer; background:transparent; gap:2px;
   }
   .cal-cell.muted{ color:#B7B39D; }
+  .cal-cell.holiday{ color:var(--stamp-deep); }
+  .cal-cell.muted.holiday{ color:#D9A79A; }
   .cal-cell.today{ box-shadow: inset 0 0 0 1.5px var(--moss); }
   .cal-cell.selected{ background:var(--ink); color:var(--paper); }
   .cal-cell.selected.today{ box-shadow:none; }
@@ -296,7 +299,10 @@
       <button class="btn btn-ghost" id="cancelBtn">취소</button>
       <button class="btn cta" id="saveBtn">저장</button>
     </div>
-    <button class="btn-danger btn" id="deleteBtn" hidden>이 할 일 삭제하기</button>
+    <div id="deleteButtons" hidden style="display:flex; gap:8px; margin-top:12px;">
+      <button class="btn btn-ghost" id="deleteOccBtn" style="color:var(--stamp-deep); border-color:var(--stamp-deep);">이 날짜만 삭제</button>
+      <button class="btn btn-ghost" id="deleteAllBtn" style="background:var(--stamp-deep); color:#fff; border-color:var(--stamp-deep);">전체 삭제</button>
+    </div>
   </div>
 </div>
 
@@ -323,7 +329,8 @@
   var state = {
     tasks: [],
     editingId: null,
-    pendingDeleteId: null,
+    editingContextDate: null,
+    pendingAction: null,
     selectedType: "daily",
     selectedDate: fmt(now0),
     viewYear: now0.getFullYear(),
@@ -338,15 +345,41 @@
   function addMonths(s,n){ var d=parseLocal(s); d.setMonth(d.getMonth()+n); return fmt(d); }
   function daysBetween(a,b){ return Math.round((parseLocal(b)-parseLocal(a))/86400000); }
 
+  function stepOnce(task, dateStr){
+    switch(task.type){
+      case "daily": return addDays(dateStr,1);
+      case "weekly": return addDays(dateStr,7);
+      case "monthly": return addMonths(dateStr,1);
+      case "custom": return addDays(dateStr, Math.max(1, task.interval||1));
+      default: return addDays(dateStr,1);
+    }
+  }
   function nextDue(task){
     if(!task.lastDone) return task.createdAt || todayStr();
-    switch(task.type){
-      case "daily": return addDays(task.lastDone,1);
-      case "weekly": return addDays(task.lastDone,7);
-      case "monthly": return addMonths(task.lastDone,1);
-      case "custom": return addDays(task.lastDone, Math.max(1, task.interval||1));
-      default: return todayStr();
+    return stepOnce(task, task.lastDone);
+  }
+  // every future occurrence date of a task that falls within [rangeStart, rangeEnd]
+  function occurrenceDatesInRange(task, rangeStart, rangeEnd){
+    var dates = [];
+    var d = nextDue(task);
+    var guard = 0;
+    while(d <= rangeEnd && guard < 500){
+      if(d >= rangeStart) dates.push(d);
+      d = stepOnce(task, d);
+      guard++;
     }
+    return dates;
+  }
+  // is `dateStr` one of this task's scheduled occurrence dates (today or in the future)?
+  function isOccurrenceOn(task, dateStr){
+    var d = nextDue(task);
+    var guard = 0;
+    while(d <= dateStr && guard < 500){
+      if(d === dateStr) return true;
+      d = stepOnce(task, d);
+      guard++;
+    }
+    return false;
   }
   function repeatLabel(task){
     switch(task.type){
@@ -384,6 +417,22 @@
     toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 1800);
   }
 
+  // ---------- holidays (KR) ----------
+  // fixed solar-calendar holidays that repeat every year (MM-DD)
+  var FIXED_HOLIDAYS = ["01-01","03-01","05-05","06-06","07-17","08-15","10-03","10-09","12-25"];
+  // exact dates for lunar/substitute holidays (currently filled in for 2026)
+  var EXACT_HOLIDAYS = {
+    "2026-02-16":"설날연휴", "2026-02-17":"설날", "2026-02-18":"설날연휴",
+    "2026-03-02":"대체공휴일",
+    "2026-05-24":"부처님오신날", "2026-05-25":"대체공휴일",
+    "2026-08-17":"대체공휴일",
+    "2026-09-24":"추석연휴", "2026-09-25":"추석", "2026-09-26":"추석연휴"
+  };
+  function isHoliday(dateStr){
+    if(EXACT_HOLIDAYS[dateStr]) return true;
+    return FIXED_HOLIDAYS.indexOf(dateStr.slice(5)) !== -1;
+  }
+
   // ---------- calendar ----------
   function buildCalendarCells(viewYear, viewMonth){
     var firstOfMonth = new Date(viewYear, viewMonth, 1);
@@ -400,12 +449,13 @@
   function renderCalendar(){
     document.getElementById("calMonthLabel").textContent = state.viewYear + "년 " + (state.viewMonth+1) + "월";
     var t = todayStr();
+    var monthStart = fmt(new Date(state.viewYear, state.viewMonth, 1));
+    var monthEnd = fmt(new Date(state.viewYear, state.viewMonth + 1, 0));
     var completedSet = {};
     var scheduledSet = {};
     state.tasks.forEach(function(task){
       (task.history||[]).forEach(function(d){ completedSet[d] = true; });
-      var nd = nextDue(task);
-      if(nd >= t) scheduledSet[nd] = true;
+      occurrenceDatesInRange(task, monthStart, monthEnd).forEach(function(d){ scheduledSet[d] = true; });
     });
 
     var cells = buildCalendarCells(state.viewYear, state.viewMonth);
@@ -416,8 +466,9 @@
       var inMonth = d.getMonth() === state.viewMonth;
       var isToday = ds === t;
       var isSelected = ds === state.selectedDate;
+      var isHolidayDate = d.getDay() === 0 || isHoliday(ds);
       var cell = document.createElement("div");
-      cell.className = "cal-cell" + (inMonth?"":" muted") + (isToday?" today":"") + (isSelected?" selected":"");
+      cell.className = "cal-cell" + (inMonth?"":" muted") + (isToday?" today":"") + (isSelected?" selected":"") + (isHolidayDate?" holiday":"");
       cell.setAttribute("data-date", ds);
       var dotsHtml = "";
       if(completedSet[ds]) dotsHtml += '<span class="cal-dot"></span>';
@@ -521,7 +572,7 @@
   }
 
   function renderFutureList(listArea, sel){
-    var items = state.tasks.filter(function(task){ return nextDue(task) === sel; });
+    var items = state.tasks.filter(function(task){ return isOccurrenceOn(task, sel); });
     if(items.length === 0){
       listArea.innerHTML = '<div class="empty" style="padding:24px 10px;"><div class="glyph">📅</div><p style="margin:0;">이 날짜엔 예정된 할 일이 없어요.</p></div>';
       return;
@@ -627,6 +678,18 @@
   function openSheet(id){
     state.editingId = id || null;
     var task = id ? state.tasks.find(function(tk){ return tk.id === id; }) : null;
+
+    // figure out which exact occurrence date this edit was opened from
+    if(task){
+      if(state.selectedDate === todayStr()){
+        state.editingContextDate = nextDue(task); // the actual pending occurrence (may be overdue)
+      } else {
+        state.editingContextDate = state.selectedDate;
+      }
+    } else {
+      state.editingContextDate = null;
+    }
+
     document.getElementById("sheetTitle").textContent = task ? "할 일 수정" : "새 할 일";
     document.getElementById("emojiInput").value = task ? (task.emoji||"") : "";
     document.getElementById("nameInput").value = task ? task.name : "";
@@ -636,14 +699,14 @@
       b.classList.toggle("active", b.getAttribute("data-type") === state.selectedType);
     });
     document.getElementById("customDaysRow").hidden = state.selectedType !== "custom";
-    document.getElementById("deleteBtn").hidden = !task;
+    document.getElementById("deleteButtons").hidden = !task;
     var statLine = document.getElementById("statLine");
     if(task){ statLine.hidden = false; statLine.textContent = "지금까지 총 " + (task.history||[]).length + "번 완료했어요."; }
     else { statLine.hidden = true; }
     sheetOverlay.hidden = false;
     setTimeout(function(){ document.getElementById("nameInput").focus(); }, 50);
   }
-  function closeSheet(){ sheetOverlay.hidden = true; state.editingId = null; }
+  function closeSheet(){ sheetOverlay.hidden = true; state.editingId = null; state.editingContextDate = null; }
 
   document.getElementById("fabBtn").addEventListener("click", function(){ openSheet(null); });
   document.getElementById("emptyAddBtn").addEventListener("click", function(){ openSheet(null); });
@@ -666,7 +729,7 @@
         id: "t" + Date.now() + Math.random().toString(36).slice(2,7),
         name: name, emoji: emoji, type: state.selectedType,
         interval: state.selectedType === "custom" ? interval : null,
-        lastDone: null, history: [], createdAt: todayStr()
+        lastDone: null, history: [], createdAt: state.selectedDate || todayStr()
       });
     }
     await saveTasks();
@@ -675,20 +738,55 @@
     showToast(state.editingId ? "수정했어요." : "새 할 일을 등록했어요.");
   });
 
-  document.getElementById("deleteBtn").addEventListener("click", function(){
-    state.pendingDeleteId = state.editingId;
+  document.getElementById("deleteOccBtn").addEventListener("click", function(){
+    var task = state.tasks.find(function(tk){ return tk.id === state.editingId; });
+    if(!task) return;
+    var d = state.editingContextDate;
+    var isPast = d < todayStr();
+    state.pendingAction = isPast
+      ? { type: "unhistory", id: task.id, date: d }
+      : { type: "skip", id: task.id, date: d };
+    var md = parseLocal(d);
+    var label = (md.getMonth()+1) + "월 " + md.getDate() + "일";
+    document.getElementById("confirmMsg").innerHTML = isPast
+      ? (label + "에 완료한 기록만 지울까요?<br>나머지 반복 일정은 그대로 유지돼요.")
+      : (label + " 일정만 건너뛸까요?<br>다음 반복 일정은 그대로 유지돼요.");
+    document.getElementById("confirmOverlay").hidden = false;
+  });
+  document.getElementById("deleteAllBtn").addEventListener("click", function(){
+    state.pendingAction = { type: "all", id: state.editingId };
+    document.getElementById("confirmMsg").innerHTML = "이 할 일을 통째로 삭제할까요?<br>반복 일정과 기록이 모두 사라져요.";
     document.getElementById("confirmOverlay").hidden = false;
   });
   document.getElementById("confirmCancel").addEventListener("click", function(){
-    document.getElementById("confirmOverlay").hidden = true; state.pendingDeleteId = null;
+    document.getElementById("confirmOverlay").hidden = true; state.pendingAction = null;
   });
   document.getElementById("confirmOk").addEventListener("click", async function(){
-    state.tasks = state.tasks.filter(function(tk){ return tk.id !== state.pendingDeleteId; });
-    document.getElementById("confirmOverlay").hidden = true; state.pendingDeleteId = null;
+    var action = state.pendingAction;
+    document.getElementById("confirmOverlay").hidden = true;
+    state.pendingAction = null;
+    if(!action) return;
+
+    if(action.type === "all"){
+      state.tasks = state.tasks.filter(function(tk){ return tk.id !== action.id; });
+      showToast("삭제했어요.");
+    } else if(action.type === "skip"){
+      var task1 = state.tasks.find(function(tk){ return tk.id === action.id; });
+      if(task1) task1.lastDone = action.date;
+      showToast("이 날짜 일정을 건너뛰었어요.");
+    } else if(action.type === "unhistory"){
+      var task2 = state.tasks.find(function(tk){ return tk.id === action.id; });
+      if(task2){
+        task2.history = (task2.history||[]).filter(function(d2){ return d2 !== action.date; });
+        if(task2.lastDone === action.date){
+          task2.lastDone = task2.history.length ? task2.history[task2.history.length-1] : null;
+        }
+      }
+      showToast("완료 기록을 지웠어요.");
+    }
     await saveTasks();
     closeSheet();
     render();
-    showToast("삭제했어요.");
   });
 
   (async function init(){
