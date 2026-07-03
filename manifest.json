@@ -1,13 +1,13 @@
 {
-  "name": "반복 할 일 장부",
-  "short_name": "할일장부",
-  "description": "매일, 매주, 매월 반복되는 할 일을 캘린더로 관리하는 체크리스트 앱",
+  "name": "CHECK",
+  "short_name": "CHECK",
+  "description": "매일, 매주, 매월 반복되는 할 일을 캘린더와 습관 통계로 관리하는 체크리스트 앱",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#ECEEE1",
-  "theme_color": "#ECEEE1",
+  "background_color": "#F3F1FB",
+  "theme_color": "#F3F1FB",
   "lang": "ko",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },

@@ -6,136 +6,185 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#ECEEE1">
+<meta name="theme-color" content="#F3F1FB">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>반복 · 할 일 장부</title>
+<title>CHECK</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/font-nanum/1.0/nanumbarungothic/nanumbarungothic.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper:#ECEEE1;
-    --card:#FBFAF3;
-    --ink:#242E27;
-    --ink-soft:#5B6459;
-    --line:#C9C4AC;
-    --stamp:#B8402F;
-    --stamp-deep:#8F2E21;
-    --mustard:#CE9A2E;
-    --moss:#5C7A5A;
-    --shadow: 0 1px 0 rgba(36,46,39,0.06), 0 8px 20px -12px rgba(36,46,39,0.35);
-    --radius: 14px;
+    --ink:#241E3D;
+    --ink-soft:#726C8C;
+    --line: rgba(114,108,140,0.22);
+    --glass: rgba(255,255,255,0.52);
+    --glass-strong: rgba(255,255,255,0.74);
+    --glass-border: rgba(255,255,255,0.65);
+    --primary1:#8B7CF6;
+    --primary2:#45D6C6;
+    --gradient: linear-gradient(135deg, var(--primary1), var(--primary2));
+    --danger:#F2617A;
+    --danger-deep:#D6435C;
+    --success:#34D399;
+    --success-deep:#1FA57D;
+    --mustard:#F4B740;
+    --mustard-text:#A9760B;
+    --shadow: 0 8px 28px rgba(90,70,150,0.14);
+    --radius:20px;
     font-size: 16px;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
   [hidden]{ display:none !important; }
   html,body{margin:0;padding:0; overflow-x:hidden; width:100%;}
   body{
-    background:
-      radial-gradient(circle at 1px 1px, rgba(36,46,39,0.05) 1px, transparent 1.6px) 0 0/16px 16px,
-      var(--paper);
+    position:relative;
     color:var(--ink);
     font-family:"Nanum Barun Gothic","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
     min-height:100vh;
     display:flex;
     justify-content:center;
+    background:#F3F1FB;
+  }
+  body::before{
+    content:"";
+    position:fixed; inset:-10%;
+    z-index:-1;
+    background:
+      radial-gradient(circle at 18% 20%, rgba(139,124,246,0.45), transparent 42%),
+      radial-gradient(circle at 84% 12%, rgba(69,214,198,0.42), transparent 45%),
+      radial-gradient(circle at 22% 88%, rgba(244,183,64,0.30), transparent 45%),
+      radial-gradient(circle at 90% 82%, rgba(242,97,122,0.26), transparent 45%),
+      #F3F1FB;
+    filter: blur(50px);
   }
   .app{
     width:100%;
     max-width:480px;
     min-height:100vh;
     position:relative;
-    padding: calc(env(safe-area-inset-top) + 20px) 18px calc(env(safe-area-inset-bottom) + 110px);
+    padding: calc(env(safe-area-inset-top) + 20px) 18px calc(env(safe-area-inset-bottom) + 130px);
   }
 
-  /* ---------- Calendar header ---------- */
+  .app-wordmark{
+    font-size:26px; font-weight:800; letter-spacing:-0.02em; margin: 0 0 16px;
+    background: var(--gradient); -webkit-background-clip:text; background-clip:text; color:transparent;
+    display:inline-block;
+  }
+
+  .glass{
+    background:var(--glass);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    border:1px solid var(--glass-border);
+    box-shadow: var(--shadow);
+  }
+
+  .mode-toggle{ display:flex; gap:6px; margin-bottom:14px; }
+  .mode-btn{
+    flex:1; background:var(--glass); -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px);
+    border:1px solid var(--glass-border); border-radius:999px; padding:9px; font-size:12.5px;
+    font-weight:700; color:var(--ink-soft); cursor:pointer;
+  }
+  .mode-btn.active{ background:var(--gradient); color:#fff; border-color:transparent; box-shadow: 0 6px 16px rgba(139,124,246,0.35); }
+
   .cal-topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
-  .cal-month-label{ font-family:"Fraunces", serif; font-size:22px; font-weight:600; }
+  .cal-month-label{ font-size:19px; font-weight:800; }
   .cal-nav{ display:flex; gap:6px; align-items:center; }
   .nav-btn{
     width:32px;height:32px;border-radius:50%;
-    background:var(--card); border:1px solid var(--line);
+    background:var(--glass); border:1px solid var(--glass-border);
     font-size:15px; color:var(--ink); display:flex;align-items:center;justify-content:center;
     cursor:pointer;
   }
   .today-chip{
-    background:var(--ink); color:var(--paper); border:none;
+    background:var(--gradient); color:#fff; border:none;
     font-weight:700; font-size:11.5px; padding:6px 12px; border-radius:999px;
-    cursor:pointer; margin-left:4px;
+    cursor:pointer; margin-left:4px; box-shadow: 0 6px 14px rgba(139,124,246,0.35);
   }
   .weekday-row{
     display:grid; grid-template-columns:repeat(7,1fr);
     text-align:center; font-size:11px; font-weight:700; color:var(--ink-soft);
     margin-bottom:6px;
   }
-  .weekday-row span:first-child{ color:var(--stamp-deep); }
-  .cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:3px; margin-bottom:8px;}
+  .weekday-row span:first-child{ color:var(--danger); }
+  .cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:3px; margin-bottom:10px;}
   .cal-cell{
     position:relative; aspect-ratio:1;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    border-radius:10px; font-size:13px; font-weight:600; color:var(--ink);
+    border-radius:12px; font-size:13px; font-weight:600; color:var(--ink);
     cursor:pointer; background:transparent; gap:2px;
   }
-  .cal-cell.muted{ color:#B7B39D; }
-  .cal-cell.holiday{ color:var(--stamp-deep); }
-  .cal-cell.muted.holiday{ color:#D9A79A; }
-  .cal-cell.today{ box-shadow: inset 0 0 0 1.5px var(--moss); }
-  .cal-cell.selected{ background:var(--ink); color:var(--paper); }
-  .cal-cell.selected.today{ box-shadow:none; }
+  .cal-cell.muted{ color:#B7B0CC; }
+  .cal-cell.holiday{ color:var(--danger); }
+  .cal-cell.muted.holiday{ color:#E3B3BE; }
+  .cal-cell.today{ box-shadow: inset 0 0 0 1.5px var(--primary1); }
+  .cal-cell.selected{ background:var(--gradient); color:#fff; box-shadow:0 6px 16px rgba(139,124,246,0.35); }
+  .cal-cell.selected.today{ box-shadow:0 6px 16px rgba(139,124,246,0.35); }
   .cal-dotrow{ display:flex; gap:2px; height:5px; }
-  .cal-dot{ width:4px;height:4px;border-radius:50%; background:var(--stamp); }
+  .cal-dot{ width:4px;height:4px;border-radius:50%; background:var(--success); }
   .cal-dot.scheduled{ background:var(--mustard); }
-  .cal-cell.selected .cal-dot{ background:var(--paper); opacity:.85; }
+  .cal-cell.selected .cal-dot{ background:#fff; opacity:.9; }
+
+  .week-strip{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:10px; }
+  .week-pill{
+    background:var(--glass); -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px);
+    border:1px solid var(--glass-border); border-radius:16px; padding:10px 2px 8px;
+    display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer;
+  }
+  .week-pill .wp-day{ font-size:10.5px; font-weight:700; color:var(--ink-soft); }
+  .week-pill .wp-date{ font-size:15px; font-weight:800; }
+  .week-pill.holiday .wp-day, .week-pill.holiday .wp-date{ color:var(--danger); }
+  .week-pill.today{ box-shadow: inset 0 0 0 1.5px var(--primary1); }
+  .week-pill.selected{ background:var(--gradient); border-color:transparent; box-shadow:0 6px 16px rgba(139,124,246,0.35); }
+  .week-pill.selected .wp-day, .week-pill.selected .wp-date{ color:#fff; }
+  .week-pill.selected .cal-dot{ background:#fff; }
 
   .progress-row{
     display:flex; align-items:center; gap:10px;
-    background:var(--card); border:1px solid var(--line); border-radius:999px;
-    padding:10px 16px; box-shadow: var(--shadow); margin: 4px 0 4px;
+    border-radius:999px;
+    padding:10px 16px; margin: 4px 0 4px;
   }
-  .progress-text{ font-size:13.5px; font-weight:600; flex-shrink:0; }
+  .progress-text{ font-size:13.5px; font-weight:700; flex-shrink:0; }
   .dots{ display:flex; gap:6px; flex-wrap:wrap; }
   .dot{ width:9px;height:9px;border-radius:50%; background:var(--line); }
-  .dot.on{ background:var(--stamp); }
+  .dot.on{ background:var(--success); }
 
-  /* ---------- Selected date section ---------- */
   .selected-date-title{
-    font-family:"Fraunces", serif; font-size:18px; font-weight:600;
+    font-size:17px; font-weight:800;
     margin: 22px 2px 4px; display:flex; align-items:center; gap:8px;
   }
   .selected-date-sub{ font-size:12.5px; color:var(--ink-soft); font-weight:600; margin:0 2px 14px; }
 
-  /* ---------- Task ticket (today, interactive) ---------- */
   .ticket{
-    position:relative; background:var(--card); border-radius: var(--radius);
-    box-shadow: var(--shadow); margin-bottom:12px; display:flex; align-items:stretch;
-    overflow:hidden; border:1px solid rgba(36,46,39,0.07);
+    position:relative; border-radius: var(--radius);
+    margin-bottom:12px; display:flex; align-items:stretch;
+    overflow:hidden;
   }
   .ticket-main{ flex:1; padding:14px; display:flex; flex-direction:column; gap:3px; min-width:0; cursor:pointer; }
   .ticket-title-row{ display:flex; align-items:center; gap:9px; }
   .ticket-emoji{ font-size:20px; line-height:1; flex-shrink:0; }
-  .ticket-name{ font-size:15.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .ticket-meta{ font-size:12.5px; color:var(--ink-soft); font-weight:500; padding-left:29px;}
-  .ticket-meta.overdue{ color:var(--stamp-deep); font-weight:700; }
-  .ticket-meta.mustard{ color:#9A711F; font-weight:700; }
+  .ticket-name{ font-size:15.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ticket-meta{ font-size:12.5px; color:var(--ink-soft); font-weight:600; padding-left:29px;}
+  .ticket-meta.overdue{ color:var(--danger-deep); font-weight:700; }
+  .ticket-meta.mustard{ color:var(--mustard-text); font-weight:700; }
   .ticket-check{
     width:64px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
-    background: rgba(36,46,39,0.03); border-left:1px dashed var(--line); position:relative; cursor:pointer;
+    background: rgba(255,255,255,0.25); border-left:1px solid var(--glass-border); position:relative; cursor:pointer;
   }
   .check-circle{
     width:34px;height:34px;border-radius:50%; border:2px solid var(--ink-soft);
     display:flex;align-items:center;justify-content:center; color:transparent; font-size:18px;
     transition: all .15s ease;
   }
-  .ticket.done .check-circle{ border-color:var(--stamp); background:var(--stamp); color:#fff; }
+  .ticket.done .check-circle{ border-color:transparent; background:var(--success); color:#fff; }
   .ticket.done .ticket-name{ color:var(--ink-soft); text-decoration: line-through; text-decoration-color: var(--line); }
   .stamp-pop{
-    position:absolute; top:50%; left:50%; width:70px; height:70px; margin:-35px 0 0 -35px;
+    position:absolute; top:50%; left:50%; width:66px; height:66px; margin:-33px 0 0 -33px;
     pointer-events:none; display:flex; align-items:center; justify-content:center;
-    border:2.5px solid var(--stamp); border-radius:50%; color:var(--stamp);
-    font-family:"Fraunces", serif; font-weight:700; font-size:12px; letter-spacing:.05em;
-    transform: rotate(-14deg) scale(1.5); opacity:0; filter: url(#inkRough);
+    border:2.5px solid var(--success-deep); border-radius:50%; color:var(--success-deep);
+    background: rgba(255,255,255,0.6);
+    font-weight:800; font-size:12px; letter-spacing:.05em;
+    transform: rotate(-14deg) scale(1.5); opacity:0;
   }
   @keyframes stampIn{
     0%{ transform: rotate(-14deg) scale(1.9); opacity:0; }
@@ -145,45 +194,57 @@
   }
   .stamp-pop.playing{ animation: stampIn .38s ease-out forwards; }
 
-  /* ---------- Read-only rows (past / future dates) ---------- */
   .readonly-row{
     display:flex; align-items:center; gap:11px; padding:12px 14px;
-    background:var(--card); border:1px solid var(--line); border-radius:12px; margin-bottom:10px;
+    border-radius:16px; margin-bottom:10px;
   }
   .re-emoji{ font-size:19px; }
-  .re-name{ flex:1; font-size:14.5px; font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .re-name{ flex:1; font-size:14.5px; font-weight:700; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .re-badge{ font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px; flex-shrink:0; }
-  .re-badge.done{ background:rgba(92,122,90,0.16); color:var(--moss); }
-  .re-badge.scheduled{ background:rgba(206,154,46,0.2); color:#9A711F; }
+  .re-badge.done{ background:rgba(52,211,153,0.2); color:var(--success-deep); }
+  .re-badge.scheduled{ background:rgba(244,183,64,0.25); color:var(--mustard-text); }
 
-  /* ---------- Empty states ---------- */
   .empty{ text-align:center; padding: 40px 20px 20px; color:var(--ink-soft); }
   .empty .glyph{ font-size:30px; margin-bottom:8px; }
-  .empty h3{ font-family:"Fraunces", serif; font-size:18px; color:var(--ink); margin:0 0 6px; font-weight:600;}
+  .empty h3{ font-size:18px; color:var(--ink); margin:0 0 6px; font-weight:800;}
   .empty p{ font-size:13.5px; margin:0 0 16px; line-height:1.5; }
 
-  /* ---------- FAB ---------- */
   .fab{
-    position:fixed; right:22px; bottom: calc(env(safe-area-inset-bottom) + 26px);
-    width:56px;height:56px;border-radius:50%; background:var(--ink); color:var(--paper);
+    position:fixed; right:22px; bottom: calc(env(safe-area-inset-bottom) + 96px);
+    width:56px;height:56px;border-radius:50%; background:var(--gradient); color:#fff;
     border:none; font-size:26px; display:flex;align-items:center;justify-content:center;
-    box-shadow: 0 10px 24px -8px rgba(36,46,39,0.55); cursor:pointer; z-index:20;
+    box-shadow: 0 12px 26px -6px rgba(139,124,246,0.55); cursor:pointer; z-index:20;
   }
   .fab:active{ transform: scale(0.94); }
   .btn{ border:none; cursor:pointer; font-family:inherit; }
-  .cta{ background:var(--ink); color:var(--paper); padding:11px 20px; border-radius:999px; font-size:14px; font-weight:700; }
+  .cta{ background:var(--gradient); color:#fff; padding:11px 20px; border-radius:999px; font-size:14px; font-weight:700; box-shadow:0 8px 18px rgba(139,124,246,0.35); }
 
-  /* ---------- Overlay / Sheet ---------- */
-  .overlay{ position:fixed; inset:0; background:rgba(36,46,39,0.42); display:flex; align-items:flex-end; justify-content:center; z-index:50; }
+  .tabbar{
+    position:fixed; left:50%; bottom: calc(env(safe-area-inset-bottom) + 14px); transform:translateX(-50%);
+    width: calc(100% - 36px); max-width:444px;
+    background:var(--glass-strong); -webkit-backdrop-filter:blur(24px) saturate(180%); backdrop-filter:blur(24px) saturate(180%);
+    border:1px solid var(--glass-border); border-radius:22px; box-shadow:var(--shadow);
+    display:flex; padding:7px; gap:6px; z-index:15;
+  }
+  .tab-btn{
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:2px;
+    background:transparent; border:none; border-radius:16px; padding:8px 0;
+    color:var(--ink-soft); font-size:11px; font-weight:700; cursor:pointer;
+  }
+  .tab-btn .tab-icon{ font-size:19px; line-height:1; }
+  .tab-btn.active{ background:var(--gradient); color:#fff; }
+
+  .overlay{ position:fixed; inset:0; background:rgba(36,30,61,0.38); display:flex; align-items:flex-end; justify-content:center; z-index:50; }
   .overlay[hidden]{ display:none; }
   .sheet{
-    width:100%; max-width:480px; background:var(--paper); border-radius:22px 22px 0 0;
+    width:100%; max-width:480px; background:rgba(248,247,252,0.96); -webkit-backdrop-filter:blur(24px); backdrop-filter:blur(24px);
+    border-radius:26px 26px 0 0;
     padding: 18px 20px calc(env(safe-area-inset-bottom) + 20px);
-    box-shadow: 0 -10px 30px rgba(0,0,0,0.25); max-height:88vh; overflow-y:auto; overflow-x:hidden;
+    box-shadow: 0 -10px 30px rgba(36,30,61,0.25); max-height:88vh; overflow-y:auto; overflow-x:hidden;
     box-sizing:border-box;
   }
   .sheet-handle{ width:36px;height:4px;border-radius:2px;background:var(--line); margin:0 auto 16px; }
-  .sheet h2{ font-family:"Fraunces", serif; font-size:21px; margin:0 0 16px; font-weight:600; }
+  .sheet h2{ font-size:20px; margin:0 0 16px; font-weight:800; }
   label.field-label{
     display:block; font-size:12.5px; font-weight:700; color:var(--ink-soft);
     letter-spacing:.04em; text-transform:uppercase; margin: 16px 0 8px;
@@ -192,40 +253,63 @@
   .row-input{ display:flex; gap:8px; max-width:100%; }
   .row-input #nameInput{ flex:1; min-width:0; }
   input[type=text], input[type=number]{
-    width:100%; background:var(--card); border:1px solid var(--line); border-radius:12px;
+    width:100%; background:#fff; border:1px solid var(--line); border-radius:14px;
     padding:12px 14px; font-size:15px; font-family:inherit; color:var(--ink); outline:none;
   }
-  input[type=text]:focus, input[type=number]:focus{ border-color:var(--ink-soft); }
+  input[type=text]:focus, input[type=number]:focus{ border-color:var(--primary1); }
   .emoji-field{ text-align:center; font-size:20px; }
   #emojiInput{ width:64px; flex:0 0 64px; }
   .emoji-picks{ display:flex; gap:7px; flex-wrap:wrap; margin-top:9px; }
-  .emoji-pick{ width:38px;height:38px;border-radius:10px; background:var(--card); border:1px solid var(--line); font-size:18px; display:flex;align-items:center;justify-content:center; }
+  .emoji-pick{ width:38px;height:38px;border-radius:12px; background:#fff; border:1px solid var(--line); font-size:18px; display:flex;align-items:center;justify-content:center; }
   .segmented{ display:grid; grid-template-columns: repeat(4,1fr); gap:7px; }
-  .seg-btn{ background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px 4px; font-size:13px; font-weight:700; color:var(--ink-soft); }
-  .seg-btn.active{ background:var(--ink); border-color:var(--ink); color:var(--paper); }
+  .seg-btn{ background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 4px; font-size:13px; font-weight:700; color:var(--ink-soft); }
+  .seg-btn.active{ background:var(--gradient); border-color:transparent; color:#fff; }
   .custom-days{ display:flex; align-items:center; gap:8px; margin-top:10px; }
   .custom-days span{ font-size:13.5px; color:var(--ink-soft); font-weight:600; white-space:nowrap;}
   .custom-days input{ width:76px; text-align:center; }
   .sheet-actions{ display:flex; gap:10px; margin-top:22px; }
   .sheet-actions .cta{ flex:1; text-align:center; }
-  .btn-ghost{ flex:1; background:transparent; border:1px solid var(--line); border-radius:999px; padding:11px 16px; font-weight:700; font-size:14px; color:var(--ink-soft); }
-  .btn-danger{ width:100%; margin-top:10px; background:transparent; border:none; color:var(--stamp-deep); font-weight:700; font-size:13.5px; padding:10px; text-align:center; }
-  .stat-line{ font-size:12.5px; color:var(--ink-soft); margin-top:14px; background:var(--card); border:1px dashed var(--line); border-radius:10px; padding:10px 12px; }
+  .btn-ghost{ flex:1; background:#fff; border:1px solid var(--line); border-radius:999px; padding:11px 16px; font-weight:700; font-size:14px; color:var(--ink-soft); }
+  .stat-line{ font-size:12.5px; color:var(--ink-soft); margin-top:14px; background:#fff; border:1px dashed var(--line); border-radius:12px; padding:10px 12px; }
   .delete-buttons-row{ display:flex; gap:8px; margin-top:12px; }
 
-  .confirm-box{ background:var(--card); border-radius:16px; padding:20px; width:86%; max-width:320px; box-shadow: var(--shadow); text-align:center; }
-  .confirm-box p{ font-size:14.5px; color:var(--ink); margin:0 0 16px; font-weight:600; line-height:1.5;}
+  .confirm-box{ background:rgba(255,255,255,0.92); -webkit-backdrop-filter:blur(20px); backdrop-filter:blur(20px); border-radius:20px; padding:20px; width:86%; max-width:320px; box-shadow: var(--shadow); text-align:center; }
+  .confirm-box p{ font-size:14.5px; color:var(--ink); margin:0 0 16px; font-weight:700; line-height:1.5;}
   .confirm-actions{ display:flex; gap:8px; }
-  .confirm-actions button{ flex:1; padding:10px; border-radius:999px; font-weight:700; font-size:13.5px;}
-  .confirm-cancel{ background:transparent; border:1px solid var(--line); color:var(--ink-soft); }
-  .confirm-ok{ background:var(--stamp); border:none; color:#fff; }
+  .confirm-actions button{ flex:1; padding:10px; border-radius:999px; font-weight:700; font-size:13.5px; border:none; cursor:pointer;}
+  .confirm-cancel{ background:#fff; border:1px solid var(--line); color:var(--ink-soft); }
+  .confirm-ok{ background:var(--danger); color:#fff; }
 
   .toast{
-    position:fixed; left:50%; bottom:100px; transform:translateX(-50%);
-    background:var(--ink); color:var(--paper); font-size:13px; font-weight:600;
+    position:fixed; left:50%; bottom:130px; transform:translateX(-50%);
+    background:var(--ink); color:#fff; font-size:13px; font-weight:600;
     padding:10px 18px; border-radius:999px; z-index:80; opacity:0; transition:opacity .25s ease; pointer-events:none;
   }
   .toast.show{ opacity:1; }
+
+  .stat-cards{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
+  .stat-card{ border-radius:18px; padding:14px; }
+  .stat-card .sc-val{ font-size:21px; font-weight:800; margin-bottom:2px; }
+  .stat-card .sc-label{ font-size:11.5px; color:var(--ink-soft); font-weight:700; }
+  .habit-row{ border-radius:16px; padding:14px; margin-bottom:12px; }
+  .habit-row-head{ display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .habit-row-head .re-emoji{ font-size:17px; }
+  .habit-row-head .re-name{ font-size:14px; font-weight:700; flex:1; }
+  .habit-row-head .re-badge{ font-size:10.5px; }
+  .week-dots{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; text-align:center; }
+  .week-dots .wd-col{ display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .week-dots .wd-label{ font-size:10px; font-weight:700; color:var(--ink-soft); }
+  .wd-circle{ width:24px;height:24px;border-radius:50%; display:flex;align-items:center;justify-content:center; font-size:12px; background:rgba(114,108,140,0.10); color:transparent; }
+  .wd-circle.done{ background:var(--success); color:#fff; }
+  .wd-circle.missed{ background:transparent; border:1.5px solid var(--danger); }
+  .wd-circle.future{ background:transparent; border:1.5px dashed var(--line); }
+
+  .heatmap-wrap{ margin-bottom:16px; }
+  .heatmap-title{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; margin-bottom:8px; }
+  .heatmap{ display:grid; grid-template-rows:repeat(7,1fr); grid-auto-flow:column; grid-auto-columns:11px; gap:3px; overflow-x:auto; padding:2px; }
+  .heatmap-cell{ width:11px;height:11px;border-radius:3px; background:rgba(114,108,140,0.14); }
+  .heatmap-cell.done{ background:var(--success); }
+  .heatmap-cell.is-today{ box-shadow:0 0 0 1.5px var(--primary1); }
 
   @media (prefers-reduced-motion: reduce){
     .stamp-pop.playing{ animation:none; opacity:1; }
@@ -234,47 +318,69 @@
 </style>
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute">
-  <filter id="inkRough">
-    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"/>
-    <feDisplacementMap in="SourceGraphic" in2="n" scale="2.2"/>
-  </filter>
-</svg>
 
 <div class="app">
-  <header>
-    <div class="cal-topbar">
-      <div class="cal-month-label" id="calMonthLabel">2026년 7월</div>
-      <div class="cal-nav">
-        <button class="today-chip" id="todayChip" hidden>오늘</button>
-        <button class="nav-btn" id="prevMonthBtn" aria-label="이전 달">‹</button>
-        <button class="nav-btn" id="nextMonthBtn" aria-label="다음 달">›</button>
-      </div>
-    </div>
-    <div class="weekday-row">
-      <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
-    </div>
-    <div class="cal-grid" id="calGrid"></div>
-    <div class="progress-row" id="progressRow" hidden>
-      <span class="progress-text" id="progressText">0/0 완료</span>
-      <div class="dots" id="progressDots"></div>
-    </div>
-  </header>
+  <div class="app-wordmark">CHECK</div>
 
-  <main>
-    <div class="selected-date-title" id="selectedDateTitle">오늘 · 7월 2일</div>
-    <div class="selected-date-sub" id="selectedDateSub"></div>
-    <div id="taskListArea"></div>
-    <div class="empty" id="emptyState" hidden>
-      <div class="glyph">🗒️</div>
-      <h3>아직 등록한 할 일이 없어요</h3>
-      <p>매일, 매주, 매월 반복되는 일을<br>장부에 적듯 등록해보세요.</p>
-      <button class="btn cta" id="emptyAddBtn">+ 첫 번째 할 일 추가하기</button>
+  <div id="homeView">
+    <header>
+      <div class="mode-toggle" id="calModeToggle">
+        <button class="mode-btn active" data-mode="month">월간</button>
+        <button class="mode-btn" data-mode="week">주간</button>
+      </div>
+      <div class="cal-topbar">
+        <div class="cal-month-label" id="calMonthLabel">2026년 7월</div>
+        <div class="cal-nav">
+          <button class="today-chip" id="todayChip" hidden>오늘</button>
+          <button class="nav-btn" id="prevMonthBtn" aria-label="이전">‹</button>
+          <button class="nav-btn" id="nextMonthBtn" aria-label="다음">›</button>
+        </div>
+      </div>
+      <div id="monthWrap">
+        <div class="weekday-row">
+          <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+      <div class="week-strip" id="weekStrip" hidden></div>
+      <div class="progress-row glass" id="progressRow" hidden>
+        <span class="progress-text" id="progressText">0/0 완료</span>
+        <div class="dots" id="progressDots"></div>
+      </div>
+    </header>
+
+    <main>
+      <div class="selected-date-title" id="selectedDateTitle">오늘 · 7월 2일</div>
+      <div class="selected-date-sub" id="selectedDateSub"></div>
+      <div id="taskListArea"></div>
+      <div class="empty glass" id="emptyState" hidden style="border-radius:20px;">
+        <div class="glyph">🗒️</div>
+        <h3>아직 등록한 할 일이 없어요</h3>
+        <p>매일, 매주, 매월 반복되는 일을<br>등록해보세요.</p>
+        <button class="btn cta" id="emptyAddBtn">+ 첫 번째 할 일 추가하기</button>
+      </div>
+    </main>
+  </div>
+
+  <div id="statsView" hidden>
+    <div class="mode-toggle" id="statsModeToggle">
+      <button class="mode-btn active" data-smode="weekly">주간</button>
+      <button class="mode-btn" data-smode="overall">전체</button>
     </div>
-  </main>
+    <div id="statsBody"></div>
+  </div>
 </div>
 
 <button class="fab btn" id="fabBtn" aria-label="할 일 추가">+</button>
+
+<nav class="tabbar">
+  <button class="tab-btn active" id="tabHomeBtn" data-tab="home">
+    <span class="tab-icon">🏠</span><span>홈</span>
+  </button>
+  <button class="tab-btn" id="tabStatsBtn" data-tab="stats">
+    <span class="tab-icon">📊</span><span>통계</span>
+  </button>
+</nav>
 
 <div class="overlay" id="sheetOverlay" hidden>
   <div class="sheet" id="taskSheet">
@@ -302,8 +408,8 @@
       <button class="btn cta" id="saveBtn">저장</button>
     </div>
     <div id="deleteButtons" class="delete-buttons-row" hidden>
-      <button class="btn btn-ghost" id="deleteOccBtn" style="color:var(--stamp-deep); border-color:var(--stamp-deep);">이 날짜만 삭제</button>
-      <button class="btn btn-ghost" id="deleteAllBtn" style="background:var(--stamp-deep); color:#fff; border-color:var(--stamp-deep);">전체 삭제</button>
+      <button class="btn btn-ghost" id="deleteOccBtn" style="color:var(--danger-deep); border-color:var(--danger-deep);">이 날짜만 삭제</button>
+      <button class="btn btn-ghost" id="deleteAllBtn" style="background:var(--danger-deep); color:#fff; border-color:var(--danger-deep);">전체 삭제</button>
     </div>
   </div>
 </div>
@@ -326,6 +432,7 @@
   var STORAGE_KEY = "recurring-tasks-v1";
   var EMOJI_CHOICES = ["💧","🧹","🧺","🪥","💊","🚗","📚","🌱","🐾","🧼","💳","🧾","🛏️","🍽️"];
   var WEEKDAYS = ["일요일","월요일","화요일","수요일","목요일","금요일","토요일"];
+  var WEEKDAYS_SHORT = ["일","월","화","수","목","금","토"];
 
   var now0 = new Date();
   var state = {
@@ -336,7 +443,10 @@
     selectedType: "daily",
     selectedDate: fmt(now0),
     viewYear: now0.getFullYear(),
-    viewMonth: now0.getMonth() // 0-indexed
+    viewMonth: now0.getMonth(),
+    calMode: "month",
+    activeTab: "home",
+    statsMode: "weekly"
   };
 
   function pad(n){ return n<10 ? "0"+n : ""+n; }
@@ -360,7 +470,6 @@
     if(!task.lastDone) return task.createdAt || todayStr();
     return stepOnce(task, task.lastDone);
   }
-  // every future occurrence date of a task that falls within [rangeStart, rangeEnd]
   function occurrenceDatesInRange(task, rangeStart, rangeEnd){
     var dates = [];
     var d = nextDue(task);
@@ -372,7 +481,6 @@
     }
     return dates;
   }
-  // is `dateStr` one of this task's scheduled occurrence dates (today or in the future)?
   function isOccurrenceOn(task, dateStr){
     var d = nextDue(task);
     var guard = 0;
@@ -397,16 +505,22 @@
       return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
     });
   }
+  function weekBoundsOf(dateStr){
+    var d = parseLocal(dateStr);
+    var dow = d.getDay();
+    return { start: addDays(dateStr, -dow), end: addDays(dateStr, 6-dow) };
+  }
 
   async function loadTasks(){
     try{
-      var raw = localStorage.getItem(STORAGE_KEY);
-      state.tasks = raw ? JSON.parse(raw) : [];
+      var res = await window.storage.get(STORAGE_KEY, false);
+      state.tasks = (res && res.value) ? JSON.parse(res.value) : [];
     }catch(e){ state.tasks = []; }
   }
   async function saveTasks(){
     try{
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks));
+      var res = await window.storage.set(STORAGE_KEY, JSON.stringify(state.tasks), false);
+      if(!res) showToast("저장에 실패했어요. 다시 시도해주세요.");
     }catch(e){ showToast("저장에 실패했어요. 다시 시도해주세요."); }
   }
 
@@ -419,10 +533,7 @@
     toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 1800);
   }
 
-  // ---------- holidays (KR) ----------
-  // fixed solar-calendar holidays that repeat every year (MM-DD)
   var FIXED_HOLIDAYS = ["01-01","03-01","05-05","06-06","07-17","08-15","10-03","10-09","12-25"];
-  // exact dates for lunar/substitute holidays (currently filled in for 2026)
   var EXACT_HOLIDAYS = {
     "2026-02-16":"설날연휴", "2026-02-17":"설날", "2026-02-18":"설날연휴",
     "2026-03-02":"대체공휴일",
@@ -435,7 +546,6 @@
     return FIXED_HOLIDAYS.indexOf(dateStr.slice(5)) !== -1;
   }
 
-  // ---------- calendar ----------
   function buildCalendarCells(viewYear, viewMonth){
     var firstOfMonth = new Date(viewYear, viewMonth, 1);
     var startDow = firstOfMonth.getDay();
@@ -449,41 +559,70 @@
   }
 
   function renderCalendar(){
-    document.getElementById("calMonthLabel").textContent = state.viewYear + "년 " + (state.viewMonth+1) + "월";
     var t = todayStr();
-    var monthStart = fmt(new Date(state.viewYear, state.viewMonth, 1));
-    var monthEnd = fmt(new Date(state.viewYear, state.viewMonth + 1, 0));
-    var completedSet = {};
-    var scheduledSet = {};
-    state.tasks.forEach(function(task){
-      (task.history||[]).forEach(function(d){ completedSet[d] = true; });
-      occurrenceDatesInRange(task, monthStart, monthEnd).forEach(function(d){ scheduledSet[d] = true; });
-    });
+    document.getElementById("monthWrap").hidden = state.calMode !== "month";
+    document.getElementById("weekStrip").hidden = state.calMode !== "week";
 
-    var cells = buildCalendarCells(state.viewYear, state.viewMonth);
-    var grid = document.getElementById("calGrid");
-    grid.innerHTML = "";
-    cells.forEach(function(d){
-      var ds = fmt(d);
-      var inMonth = d.getMonth() === state.viewMonth;
-      var isToday = ds === t;
-      var isSelected = ds === state.selectedDate;
-      var isHolidayDate = d.getDay() === 0 || isHoliday(ds);
-      var cell = document.createElement("div");
-      cell.className = "cal-cell" + (inMonth?"":" muted") + (isToday?" today":"") + (isSelected?" selected":"") + (isHolidayDate?" holiday":"");
-      cell.setAttribute("data-date", ds);
-      var dotsHtml = "";
-      if(completedSet[ds]) dotsHtml += '<span class="cal-dot"></span>';
-      if(scheduledSet[ds] && !completedSet[ds]) dotsHtml += '<span class="cal-dot scheduled"></span>';
-      cell.innerHTML = '<span>'+d.getDate()+'</span><span class="cal-dotrow">'+dotsHtml+'</span>';
-      grid.appendChild(cell);
-    });
-
-    var chip = document.getElementById("todayChip");
-    chip.hidden = (state.selectedDate === t && state.viewYear === now0.getFullYear() && state.viewMonth === now0.getMonth());
+    if(state.calMode === "month"){
+      document.getElementById("calMonthLabel").textContent = state.viewYear + "년 " + (state.viewMonth+1) + "월";
+      var monthStart = fmt(new Date(state.viewYear, state.viewMonth, 1));
+      var monthEnd = fmt(new Date(state.viewYear, state.viewMonth + 1, 0));
+      var completedSet = {}, scheduledSet = {};
+      state.tasks.forEach(function(task){
+        (task.history||[]).forEach(function(d){ completedSet[d] = true; });
+        occurrenceDatesInRange(task, monthStart, monthEnd).forEach(function(d){ scheduledSet[d] = true; });
+      });
+      var cells = buildCalendarCells(state.viewYear, state.viewMonth);
+      var grid = document.getElementById("calGrid");
+      grid.innerHTML = "";
+      cells.forEach(function(d){
+        var ds = fmt(d);
+        var inMonth = d.getMonth() === state.viewMonth;
+        var isToday = ds === t;
+        var isSelected = ds === state.selectedDate;
+        var isHolidayDate = d.getDay() === 0 || isHoliday(ds);
+        var cell = document.createElement("div");
+        cell.className = "cal-cell" + (inMonth?"":" muted") + (isToday?" today":"") + (isSelected?" selected":"") + (isHolidayDate?" holiday":"");
+        cell.setAttribute("data-date", ds);
+        var dotsHtml = "";
+        if(completedSet[ds]) dotsHtml += '<span class="cal-dot"></span>';
+        if(scheduledSet[ds] && !completedSet[ds]) dotsHtml += '<span class="cal-dot scheduled"></span>';
+        cell.innerHTML = '<span>'+d.getDate()+'</span><span class="cal-dotrow">'+dotsHtml+'</span>';
+        grid.appendChild(cell);
+      });
+      var chip = document.getElementById("todayChip");
+      chip.hidden = (state.selectedDate === t && state.viewYear === now0.getFullYear() && state.viewMonth === now0.getMonth());
+    } else {
+      var wb = weekBoundsOf(state.selectedDate);
+      var sD = parseLocal(wb.start), eD = parseLocal(wb.end);
+      document.getElementById("calMonthLabel").textContent = (sD.getMonth()+1)+"/"+sD.getDate()+" - "+(eD.getMonth()+1)+"/"+eD.getDate();
+      var completedSet2 = {}, scheduledSet2 = {};
+      state.tasks.forEach(function(task){
+        (task.history||[]).forEach(function(d){ completedSet2[d] = true; });
+        occurrenceDatesInRange(task, wb.start, wb.end).forEach(function(d){ scheduledSet2[d] = true; });
+      });
+      var strip = document.getElementById("weekStrip");
+      strip.innerHTML = "";
+      for(var i=0;i<7;i++){
+        var ds2 = addDays(wb.start, i);
+        var d2 = parseLocal(ds2);
+        var isToday2 = ds2 === t;
+        var isSelected2 = ds2 === state.selectedDate;
+        var isHolidayDate2 = d2.getDay() === 0 || isHoliday(ds2);
+        var pill = document.createElement("div");
+        pill.className = "week-pill" + (isToday2?" today":"") + (isSelected2?" selected":"") + (isHolidayDate2?" holiday":"");
+        pill.setAttribute("data-date", ds2);
+        var dotsHtml2 = "";
+        if(completedSet2[ds2]) dotsHtml2 += '<span class="cal-dot"></span>';
+        if(scheduledSet2[ds2] && !completedSet2[ds2]) dotsHtml2 += '<span class="cal-dot scheduled"></span>';
+        pill.innerHTML = '<span class="wp-day">'+WEEKDAYS_SHORT[d2.getDay()]+'</span><span class="wp-date">'+d2.getDate()+'</span><span class="cal-dotrow">'+dotsHtml2+'</span>';
+        strip.appendChild(pill);
+      }
+      var chip2 = document.getElementById("todayChip");
+      chip2.hidden = (state.selectedDate === t);
+    }
   }
 
-  // ---------- main render ----------
   function render(){
     renderCalendar();
 
@@ -546,7 +685,7 @@
     document.getElementById("progressDots").innerHTML = dotsHtml;
 
     if(due.length === 0){
-      listArea.innerHTML = '<div class="empty" style="padding:24px 10px;"><div class="glyph">🎉</div><p style="margin:0;">오늘 예정된 할 일이 없어요.</p></div>';
+      listArea.innerHTML = '<div class="empty glass" style="padding:24px 10px; border-radius:20px;"><div class="glyph">🎉</div><p style="margin:0;">오늘 예정된 할 일이 없어요.</p></div>';
       return;
     }
     var html = "";
@@ -558,7 +697,7 @@
       else if(overdueDays > 0){ metaText = overdueDays + "일 지남 · " + repeatLabel(task); metaClass = "overdue"; }
       else { metaText = "오늘 마감 · " + repeatLabel(task); metaClass = "mustard"; }
       html +=
-        '<div class="ticket'+(x.doneToday?' done':'')+'">' +
+        '<div class="ticket glass'+(x.doneToday?' done':'')+'">' +
           '<div class="ticket-main" data-edit="'+task.id+'">' +
             '<div class="ticket-title-row"><span class="ticket-emoji">'+escapeHtml(task.emoji||"📌")+'</span>' +
             '<span class="ticket-name">'+escapeHtml(task.name)+'</span></div>' +
@@ -576,13 +715,13 @@
   function renderFutureList(listArea, sel){
     var items = state.tasks.filter(function(task){ return isOccurrenceOn(task, sel); });
     if(items.length === 0){
-      listArea.innerHTML = '<div class="empty" style="padding:24px 10px;"><div class="glyph">📅</div><p style="margin:0;">이 날짜엔 예정된 할 일이 없어요.</p></div>';
+      listArea.innerHTML = '<div class="empty glass" style="padding:24px 10px; border-radius:20px;"><div class="glyph">📅</div><p style="margin:0;">이 날짜엔 예정된 할 일이 없어요.</p></div>';
       return;
     }
     var html = "";
     items.forEach(function(task){
       html +=
-        '<div class="readonly-row" data-edit="'+task.id+'">' +
+        '<div class="readonly-row glass" data-edit="'+task.id+'">' +
           '<span class="re-emoji">'+escapeHtml(task.emoji||"📌")+'</span>' +
           '<span class="re-name">'+escapeHtml(task.name)+'</span>' +
           '<span class="re-badge scheduled">'+repeatLabel(task)+'</span>' +
@@ -594,13 +733,13 @@
   function renderPastList(listArea, sel){
     var items = state.tasks.filter(function(task){ return (task.history||[]).indexOf(sel) !== -1; });
     if(items.length === 0){
-      listArea.innerHTML = '<div class="empty" style="padding:24px 10px;"><div class="glyph">📭</div><p style="margin:0;">이 날짜에 완료한 기록이 없어요.</p></div>';
+      listArea.innerHTML = '<div class="empty glass" style="padding:24px 10px; border-radius:20px;"><div class="glyph">📭</div><p style="margin:0;">이 날짜에 완료한 기록이 없어요.</p></div>';
       return;
     }
     var html = "";
     items.forEach(function(task){
       html +=
-        '<div class="readonly-row" data-edit="'+task.id+'">' +
+        '<div class="readonly-row glass" data-edit="'+task.id+'">' +
           '<span class="re-emoji">'+escapeHtml(task.emoji||"📌")+'</span>' +
           '<span class="re-name">'+escapeHtml(task.name)+'</span>' +
           '<span class="re-badge done">완료</span>' +
@@ -609,7 +748,112 @@
     listArea.innerHTML = html;
   }
 
-  // ---------- interactions ----------
+  function renderStats(){
+    document.querySelectorAll("#statsModeToggle .mode-btn").forEach(function(b){
+      b.classList.toggle("active", b.getAttribute("data-smode") === state.statsMode);
+    });
+    var body = document.getElementById("statsBody");
+    if(state.tasks.length === 0){
+      body.innerHTML = '<div class="empty glass" style="border-radius:20px;"><div class="glyph">📊</div><h3>아직 통계가 없어요</h3><p>할 일을 등록하고 체크하면<br>여기에 기록이 쌓여요.</p></div>';
+      return;
+    }
+    if(state.statsMode === "weekly"){
+      body.innerHTML = renderWeeklyStatsHtml();
+    } else {
+      body.innerHTML = renderOverallStatsHtml();
+    }
+  }
+
+  function renderWeeklyStatsHtml(){
+    var t = todayStr();
+    var wb = weekBoundsOf(t);
+    var html = '<div class="selected-date-sub" style="margin:0 2px 14px;">이번 주 (' +
+      (parseLocal(wb.start).getMonth()+1)+'/'+parseLocal(wb.start).getDate()+' - '+
+      (parseLocal(wb.end).getMonth()+1)+'/'+parseLocal(wb.end).getDate()+ ')</div>';
+
+    state.tasks.forEach(function(task){
+      html += '<div class="habit-row glass">';
+      html += '<div class="habit-row-head"><span class="re-emoji">'+escapeHtml(task.emoji||"📌")+'</span>' +
+        '<span class="re-name">'+escapeHtml(task.name)+'</span>' +
+        '<span class="re-badge scheduled">'+repeatLabel(task)+'</span></div>';
+      html += '<div class="week-dots">';
+      for(var i=0;i<7;i++){
+        var ds = addDays(wb.start, i);
+        var isDone = (task.history||[]).indexOf(ds) !== -1;
+        var cls = "";
+        var mark = "";
+        if(isDone){ cls = "done"; mark = "✓"; }
+        else if(ds > t){ cls = isOccurrenceOn(task, ds) ? "future" : ""; }
+        else { cls = isOccurrenceOn(task, ds) || ds === nextDue(task) ? "missed" : ""; }
+        html += '<div class="wd-col"><span class="wd-label">'+WEEKDAYS_SHORT[parseLocal(ds).getDay()]+'</span>' +
+          '<div class="wd-circle '+cls+'">'+mark+'</div></div>';
+      }
+      html += '</div></div>';
+    });
+    return html;
+  }
+
+  function renderOverallStatsHtml(){
+    var totalTasks = state.tasks.length;
+    var totalDone = 0, best = null;
+    state.tasks.forEach(function(task){
+      var h = (task.history||[]).length;
+      totalDone += h;
+      if(!best || h > best.count) best = { name: task.name, count: h };
+    });
+
+    var t = todayStr();
+    var wb = weekBoundsOf(t);
+    var weekTotal = 0, weekDone = 0;
+    state.tasks.forEach(function(task){
+      for(var i=0;i<7;i++){
+        var ds = addDays(wb.start, i);
+        if(ds > t) continue;
+        var wasOcc = isOccurrenceOn(task, ds) || ds === nextDue(task);
+        if(!wasOcc) continue;
+        weekTotal++;
+        if((task.history||[]).indexOf(ds) !== -1) weekDone++;
+      }
+    });
+    var successRate = weekTotal > 0 ? Math.round((weekDone/weekTotal)*100) : 0;
+
+    var html = '<div class="stat-cards">' +
+      '<div class="stat-card glass"><div class="sc-val">'+totalTasks+'</div><div class="sc-label">진행 중인 할 일</div></div>' +
+      '<div class="stat-card glass"><div class="sc-val">'+totalDone+'</div><div class="sc-label">총 완료 횟수</div></div>' +
+      '<div class="stat-card glass"><div class="sc-val">'+successRate+'%</div><div class="sc-label">이번 주 완료율</div></div>' +
+      '<div class="stat-card glass"><div class="sc-val" style="font-size:14px;">'+(best?escapeHtml(best.name):'-')+'</div><div class="sc-label">가장 꾸준한 습관</div></div>' +
+    '</div>';
+
+    state.tasks.forEach(function(task){
+      html += '<div class="heatmap-wrap">';
+      html += '<div class="heatmap-title"><span>'+escapeHtml(task.emoji||"📌")+'</span><span>'+escapeHtml(task.name)+'</span></div>';
+      html += '<div class="heatmap">' + buildHeatmapCells(task) + '</div>';
+      html += '</div>';
+    });
+    return html;
+  }
+
+  function buildHeatmapCells(task){
+    var t = todayStr();
+    var start = addDays(t, -62);
+    var startD = parseLocal(start);
+    startD.setDate(startD.getDate() - startD.getDay());
+    start = fmt(startD);
+    var historySet = {};
+    (task.history||[]).forEach(function(d){ historySet[d] = true; });
+
+    var html = "";
+    var d = start;
+    var guard = 0;
+    while(d <= t && guard < 100){
+      var cls = "heatmap-cell" + (historySet[d] ? " done" : "") + (d === t ? " is-today" : "");
+      html += '<div class="'+cls+'"></div>';
+      d = addDays(d, 1);
+      guard++;
+    }
+    return html;
+  }
+
   document.addEventListener("click", function(e){
     var dateCell = e.target.closest("[data-date]");
     if(dateCell){
@@ -627,13 +871,36 @@
     if(editEl){ openSheet(editEl.getAttribute("data-edit")); return; }
   });
 
+  document.querySelectorAll("#calModeToggle .mode-btn").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      state.calMode = btn.getAttribute("data-mode");
+      document.querySelectorAll("#calModeToggle .mode-btn").forEach(function(b){ b.classList.remove("active"); });
+      btn.classList.add("active");
+      renderCalendar();
+    });
+  });
+
   document.getElementById("prevMonthBtn").addEventListener("click", function(){
-    state.viewMonth--; if(state.viewMonth<0){ state.viewMonth=11; state.viewYear--; }
-    renderCalendar();
+    if(state.calMode === "month"){
+      state.viewMonth--; if(state.viewMonth<0){ state.viewMonth=11; state.viewYear--; }
+      renderCalendar();
+    } else {
+      var nd = addDays(state.selectedDate, -7);
+      state.selectedDate = nd;
+      var d = parseLocal(nd); state.viewYear = d.getFullYear(); state.viewMonth = d.getMonth();
+      render();
+    }
   });
   document.getElementById("nextMonthBtn").addEventListener("click", function(){
-    state.viewMonth++; if(state.viewMonth>11){ state.viewMonth=0; state.viewYear++; }
-    renderCalendar();
+    if(state.calMode === "month"){
+      state.viewMonth++; if(state.viewMonth>11){ state.viewMonth=0; state.viewYear++; }
+      renderCalendar();
+    } else {
+      var nd = addDays(state.selectedDate, 7);
+      state.selectedDate = nd;
+      var d = parseLocal(nd); state.viewYear = d.getFullYear(); state.viewMonth = d.getMonth();
+      render();
+    }
   });
   document.getElementById("todayChip").addEventListener("click", function(){
     var t = todayStr(); var d = parseLocal(t);
@@ -659,7 +926,24 @@
     render();
   }
 
-  // ---------- sheet ----------
+  document.getElementById("tabHomeBtn").addEventListener("click", function(){ switchTab("home"); });
+  document.getElementById("tabStatsBtn").addEventListener("click", function(){ switchTab("stats"); });
+  function switchTab(tab){
+    state.activeTab = tab;
+    document.getElementById("homeView").hidden = tab !== "home";
+    document.getElementById("statsView").hidden = tab !== "stats";
+    document.getElementById("tabHomeBtn").classList.toggle("active", tab === "home");
+    document.getElementById("tabStatsBtn").classList.toggle("active", tab === "stats");
+    document.getElementById("fabBtn").hidden = tab !== "home";
+    if(tab === "stats") renderStats(); else render();
+  }
+  document.querySelectorAll("#statsModeToggle .mode-btn").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      state.statsMode = btn.getAttribute("data-smode");
+      renderStats();
+    });
+  });
+
   var sheetOverlay = document.getElementById("sheetOverlay");
   var emojiPicksEl = document.getElementById("emojiPicks");
   EMOJI_CHOICES.forEach(function(em){
@@ -681,10 +965,9 @@
     state.editingId = id || null;
     var task = id ? state.tasks.find(function(tk){ return tk.id === id; }) : null;
 
-    // figure out which exact occurrence date this edit was opened from
     if(task){
       if(state.selectedDate === todayStr()){
-        state.editingContextDate = nextDue(task); // the actual pending occurrence (may be overdue)
+        state.editingContextDate = nextDue(task);
       } else {
         state.editingContextDate = state.selectedDate;
       }
