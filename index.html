@@ -287,29 +287,23 @@
   }
   .toast.show{ opacity:1; }
 
-  .stat-cards{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
-  .stat-card{ border-radius:18px; padding:14px; }
-  .stat-card .sc-val{ font-size:21px; font-weight:800; margin-bottom:2px; }
-  .stat-card .sc-label{ font-size:11.5px; color:var(--ink-soft); font-weight:700; }
-  .habit-row{ border-radius:16px; padding:14px; margin-bottom:12px; }
-  .habit-row-head{ display:flex; align-items:center; gap:8px; margin-bottom:10px; }
-  .habit-row-head .re-emoji{ font-size:17px; }
-  .habit-row-head .re-name{ font-size:14px; font-weight:700; flex:1; }
-  .habit-row-head .re-badge{ font-size:10.5px; }
-  .week-dots{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; text-align:center; }
-  .week-dots .wd-col{ display:flex; flex-direction:column; align-items:center; gap:4px; }
-  .week-dots .wd-label{ font-size:10px; font-weight:700; color:var(--ink-soft); }
-  .wd-circle{ width:24px;height:24px;border-radius:50%; display:flex;align-items:center;justify-content:center; font-size:12px; background:rgba(114,108,140,0.10); color:transparent; }
-  .wd-circle.done{ background:var(--success); color:#fff; }
-  .wd-circle.missed{ background:transparent; border:1.5px solid var(--danger); }
-  .wd-circle.future{ background:transparent; border:1.5px dashed var(--line); }
-
-  .heatmap-wrap{ margin-bottom:16px; }
-  .heatmap-title{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; margin-bottom:8px; }
-  .heatmap{ display:grid; grid-template-rows:repeat(7,1fr); grid-auto-flow:column; grid-auto-columns:11px; gap:3px; overflow-x:auto; padding:2px; }
-  .heatmap-cell{ width:11px;height:11px;border-radius:3px; background:rgba(114,108,140,0.14); }
-  .heatmap-cell.done{ background:var(--success); }
-  .heatmap-cell.is-today{ box-shadow:0 0 0 1.5px var(--primary1); }
+  .habit-card{ border-radius:20px; padding:16px; margin-bottom:14px; }
+  .habit-card-head{ display:flex; align-items:center; gap:9px; margin-bottom:12px; cursor:pointer; }
+  .habit-card-head .re-emoji{ font-size:21px; }
+  .habit-card-head .re-name{ font-size:15.5px; font-weight:800; flex:1; }
+  .habit-progress-badge{ font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px; background:rgba(139,124,246,0.18); color:var(--primary1); flex-shrink:0; }
+  .habit-bar-track{ height:6px; border-radius:999px; background:rgba(114,108,140,0.14); margin-bottom:12px; overflow:hidden; }
+  .habit-bar-fill{ height:100%; background:var(--gradient); border-radius:999px; }
+  .day-grid{ display:grid; grid-template-columns:repeat(10,1fr); gap:6px; }
+  .day-grid.days-7{ grid-template-columns:repeat(7,1fr); }
+  .day-cell{
+    aspect-ratio:1; border-radius:8px; display:flex; align-items:center; justify-content:center;
+    font-size:10.5px; font-weight:700; color:var(--ink-soft);
+    background:rgba(114,108,140,0.10); cursor:pointer;
+  }
+  .day-cell.done{ background:var(--success); color:#fff; }
+  .day-cell.is-today{ box-shadow:0 0 0 1.5px var(--primary1); }
+  .day-cell.future{ background:transparent; border:1.5px dashed var(--line); color:var(--line); cursor:default; }
 
   @media (prefers-reduced-motion: reduce){
     .stamp-pop.playing{ animation:none; opacity:1; }
@@ -363,15 +357,19 @@
   </div>
 
   <div id="statsView" hidden>
-    <div class="mode-toggle" id="statsModeToggle">
-      <button class="mode-btn active" data-smode="weekly">주간</button>
-      <button class="mode-btn" data-smode="overall">전체</button>
+    <div class="selected-date-title" style="margin-top:0;">습관 트래커</div>
+    <div class="selected-date-sub">체크리스트와 별개로, 7일·30일 챌린지를 관리해요</div>
+    <div id="habitList"></div>
+    <div class="empty glass" id="habitEmpty" hidden style="border-radius:20px;">
+      <div class="glyph">🔥</div>
+      <h3>아직 등록한 습관이 없어요</h3>
+      <p>7일 또는 30일 단위로<br>습관 챌린지를 만들어보세요.</p>
+      <button class="btn cta" id="habitEmptyAddBtn">+ 첫 습관 만들기</button>
     </div>
-    <div id="statsBody"></div>
   </div>
 </div>
 
-<button class="fab btn" id="fabBtn" aria-label="할 일 추가">+</button>
+<button class="fab btn" id="fabBtn" aria-label="추가">+</button>
 
 <nav class="tabbar">
   <button class="tab-btn active" id="tabHomeBtn" data-tab="home">
@@ -402,6 +400,8 @@
     <div class="custom-days" id="customDaysRow" hidden>
       <span>매</span><input type="number" id="customDaysInput" min="1" max="365" value="10"><span>일마다</span>
     </div>
+    <label class="field-label" id="rescheduleLabel" hidden>이 날짜 변경</label>
+    <input type="date" id="rescheduleInput" hidden>
     <div class="stat-line" id="statLine" hidden></div>
     <div class="sheet-actions">
       <button class="btn btn-ghost" id="cancelBtn">취소</button>
@@ -410,6 +410,42 @@
     <div id="deleteButtons" class="delete-buttons-row" hidden>
       <button class="btn btn-ghost" id="deleteOccBtn" style="color:var(--danger-deep); border-color:var(--danger-deep);">이 날짜만 삭제</button>
       <button class="btn btn-ghost" id="deleteAllBtn" style="background:var(--danger-deep); color:#fff; border-color:var(--danger-deep);">전체 삭제</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="habitSheetOverlay" hidden>
+  <div class="sheet" id="habitSheet">
+    <div class="sheet-handle"></div>
+    <h2 id="habitSheetTitle">새 습관</h2>
+    <label class="field-label">이름</label>
+    <div class="row-input">
+      <input type="text" id="habitEmojiInput" class="emoji-field" maxlength="4" placeholder="🔥">
+      <input type="text" id="habitNameInput" placeholder="예: 아침 스트레칭" maxlength="24">
+    </div>
+    <div class="emoji-picks" id="habitEmojiPicks"></div>
+    <label class="field-label">기간</label>
+    <div class="segmented" id="habitDurationSeg" style="grid-template-columns:repeat(2,1fr);">
+      <button class="seg-btn" data-duration="7">7일 챌린지</button>
+      <button class="seg-btn" data-duration="30">30일 챌린지</button>
+    </div>
+    <label class="field-label">시작일</label>
+    <input type="date" id="habitStartInput">
+    <div class="stat-line" id="habitStatLine" hidden></div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" id="habitCancelBtn">취소</button>
+      <button class="btn cta" id="habitSaveBtn">저장</button>
+    </div>
+    <button class="btn btn-ghost" id="habitDeleteBtn" hidden style="width:100%; margin-top:12px; color:var(--danger-deep); border-color:var(--danger-deep);">이 습관 삭제하기</button>
+  </div>
+</div>
+
+<div class="overlay" id="habitConfirmOverlay" hidden>
+  <div class="confirm-box">
+    <p>이 습관을 삭제할까요?<br>체크 기록도 함께 사라져요.</p>
+    <div class="confirm-actions">
+      <button class="confirm-cancel" id="habitConfirmCancel">취소</button>
+      <button class="confirm-ok" id="habitConfirmOk">삭제</button>
     </div>
   </div>
 </div>
@@ -430,13 +466,16 @@
 (function(){
   "use strict";
   var STORAGE_KEY = "recurring-tasks-v1";
+  var HABIT_STORAGE_KEY = "habit-tracker-v1";
   var EMOJI_CHOICES = ["💧","🧹","🧺","🪥","💊","🚗","📚","🌱","🐾","🧼","💳","🧾","🛏️","🍽️"];
+  var HABIT_EMOJI_CHOICES = ["🔥","💪","🏃","📖","🧘","💧","🚭","🥗","😴","✍️","🎯","🎸"];
   var WEEKDAYS = ["일요일","월요일","화요일","수요일","목요일","금요일","토요일"];
   var WEEKDAYS_SHORT = ["일","월","화","수","목","금","토"];
 
   var now0 = new Date();
   var state = {
     tasks: [],
+    habits: [],
     editingId: null,
     editingContextDate: null,
     pendingAction: null,
@@ -446,7 +485,9 @@
     viewMonth: now0.getMonth(),
     calMode: "month",
     activeTab: "home",
-    statsMode: "weekly"
+    editingHabitId: null,
+    habitDuration: 7,
+    pendingHabitDeleteId: null
   };
 
   function pad(n){ return n<10 ? "0"+n : ""+n; }
@@ -466,7 +507,15 @@
       default: return addDays(dateStr,1);
     }
   }
-  function nextDue(task){
+  function pendingExtraDate(task){
+    if(!task.extraDates || !task.extraDates.length) return null;
+    var t = todayStr();
+    var candidates = task.extraDates.filter(function(d){ return (task.history||[]).indexOf(d) === -1; });
+    if(!candidates.length) return null;
+    candidates.sort();
+    return candidates[0];
+  }
+  function regularNextDue(task){
     var d = task.lastDone ? stepOnce(task, task.lastDone) : (task.createdAt || todayStr());
     var guard = 0;
     while(task.skipped && task.skipped.indexOf(d) !== -1 && guard < 1000){
@@ -474,6 +523,12 @@
       guard++;
     }
     return d;
+  }
+  function nextDue(task){
+    var reg = regularNextDue(task);
+    var extra = pendingExtraDate(task);
+    if(extra && extra < reg) return extra;
+    return reg;
   }
   function occurrenceDatesInRange(task, rangeStart, rangeEnd){
     var dates = [];
@@ -484,10 +539,14 @@
       d = stepOnce(task, d);
       guard++;
     }
+    (task.extraDates||[]).forEach(function(d2){
+      if(d2 >= rangeStart && d2 <= rangeEnd && dates.indexOf(d2) === -1) dates.push(d2);
+    });
     return dates;
   }
   // is `dateStr` one of this task's scheduled occurrence dates (today or in the future)?
   function isOccurrenceOn(task, dateStr){
+    if(task.extraDates && task.extraDates.indexOf(dateStr) !== -1) return true;
     if(task.skipped && task.skipped.indexOf(dateStr) !== -1) return false;
     var d = task.lastDone ? stepOnce(task, task.lastDone) : (task.createdAt || todayStr());
     var guard = 0;
@@ -527,6 +586,18 @@
   async function saveTasks(){
     try{
       var res = await window.storage.set(STORAGE_KEY, JSON.stringify(state.tasks), false);
+      if(!res) showToast("저장에 실패했어요. 다시 시도해주세요.");
+    }catch(e){ showToast("저장에 실패했어요. 다시 시도해주세요."); }
+  }
+  async function loadHabits(){
+    try{
+      var res = await window.storage.get(HABIT_STORAGE_KEY, false);
+      state.habits = (res && res.value) ? JSON.parse(res.value) : [];
+    }catch(e){ state.habits = []; }
+  }
+  async function saveHabits(){
+    try{
+      var res = await window.storage.set(HABIT_STORAGE_KEY, JSON.stringify(state.habits), false);
       if(!res) showToast("저장에 실패했어요. 다시 시도해주세요.");
     }catch(e){ showToast("저장에 실패했어요. 다시 시도해주세요."); }
   }
@@ -755,110 +826,44 @@
     listArea.innerHTML = html;
   }
 
-  function renderStats(){
-    document.querySelectorAll("#statsModeToggle .mode-btn").forEach(function(b){
-      b.classList.toggle("active", b.getAttribute("data-smode") === state.statsMode);
-    });
-    var body = document.getElementById("statsBody");
-    if(state.tasks.length === 0){
-      body.innerHTML = '<div class="empty glass" style="border-radius:20px;"><div class="glyph">📊</div><h3>아직 통계가 없어요</h3><p>할 일을 등록하고 체크하면<br>여기에 기록이 쌓여요.</p></div>';
+  function habitDates(habit){
+    var dates = [];
+    for(var i=0;i<habit.duration;i++) dates.push(addDays(habit.startDate, i));
+    return dates;
+  }
+
+  function renderHabits(){
+    var listEl = document.getElementById("habitList");
+    var emptyEl = document.getElementById("habitEmpty");
+    if(state.habits.length === 0){
+      listEl.innerHTML = "";
+      emptyEl.hidden = false;
       return;
     }
-    if(state.statsMode === "weekly"){
-      body.innerHTML = renderWeeklyStatsHtml();
-    } else {
-      body.innerHTML = renderOverallStatsHtml();
-    }
-  }
-
-  function renderWeeklyStatsHtml(){
+    emptyEl.hidden = true;
     var t = todayStr();
-    var wb = weekBoundsOf(t);
-    var html = '<div class="selected-date-sub" style="margin:0 2px 14px;">이번 주 (' +
-      (parseLocal(wb.start).getMonth()+1)+'/'+parseLocal(wb.start).getDate()+' - '+
-      (parseLocal(wb.end).getMonth()+1)+'/'+parseLocal(wb.end).getDate()+ ')</div>';
-
-    state.tasks.forEach(function(task){
-      html += '<div class="habit-row glass">';
-      html += '<div class="habit-row-head"><span class="re-emoji">'+escapeHtml(task.emoji||"📌")+'</span>' +
-        '<span class="re-name">'+escapeHtml(task.name)+'</span>' +
-        '<span class="re-badge scheduled">'+repeatLabel(task)+'</span></div>';
-      html += '<div class="week-dots">';
-      for(var i=0;i<7;i++){
-        var ds = addDays(wb.start, i);
-        var isDone = (task.history||[]).indexOf(ds) !== -1;
-        var cls = "";
-        var mark = "";
-        if(isDone){ cls = "done"; mark = "✓"; }
-        else if(ds > t){ cls = isOccurrenceOn(task, ds) ? "future" : ""; }
-        else { cls = isOccurrenceOn(task, ds) || ds === nextDue(task) ? "missed" : ""; }
-        html += '<div class="wd-col"><span class="wd-label">'+WEEKDAYS_SHORT[parseLocal(ds).getDay()]+'</span>' +
-          '<div class="wd-circle '+cls+'">'+mark+'</div></div>';
-      }
+    var html = "";
+    state.habits.forEach(function(habit){
+      var dates = habitDates(habit);
+      var checkedCount = dates.filter(function(d){ return (habit.checked||[]).indexOf(d) !== -1; }).length;
+      var pct = Math.round((checkedCount / habit.duration) * 100);
+      html += '<div class="habit-card glass">';
+      html += '<div class="habit-card-head" data-edit-habit="'+habit.id+'">' +
+        '<span class="re-emoji">'+escapeHtml(habit.emoji||"🔥")+'</span>' +
+        '<span class="re-name">'+escapeHtml(habit.name)+'</span>' +
+        '<span class="habit-progress-badge">'+checkedCount+'/'+habit.duration+'일</span></div>';
+      html += '<div class="habit-bar-track"><div class="habit-bar-fill" style="width:'+pct+'%;"></div></div>';
+      html += '<div class="day-grid '+(habit.duration===7?'days-7':'')+'">';
+      dates.forEach(function(d, idx){
+        var isDone = (habit.checked||[]).indexOf(d) !== -1;
+        var isFuture = d > t;
+        var isToday = d === t;
+        var cls = "day-cell" + (isDone?" done":"") + (isToday?" is-today":"") + (isFuture?" future":"");
+        html += '<div class="'+cls+'" '+(isFuture?'':'data-toggle-habit="'+habit.id+'" data-toggle-date="'+d+'"')+'>'+(isDone?'✓':(idx+1))+'</div>';
+      });
       html += '</div></div>';
     });
-    return html;
-  }
-
-  function renderOverallStatsHtml(){
-    var totalTasks = state.tasks.length;
-    var totalDone = 0, best = null;
-    state.tasks.forEach(function(task){
-      var h = (task.history||[]).length;
-      totalDone += h;
-      if(!best || h > best.count) best = { name: task.name, count: h };
-    });
-
-    var t = todayStr();
-    var wb = weekBoundsOf(t);
-    var weekTotal = 0, weekDone = 0;
-    state.tasks.forEach(function(task){
-      for(var i=0;i<7;i++){
-        var ds = addDays(wb.start, i);
-        if(ds > t) continue;
-        var wasOcc = isOccurrenceOn(task, ds) || ds === nextDue(task);
-        if(!wasOcc) continue;
-        weekTotal++;
-        if((task.history||[]).indexOf(ds) !== -1) weekDone++;
-      }
-    });
-    var successRate = weekTotal > 0 ? Math.round((weekDone/weekTotal)*100) : 0;
-
-    var html = '<div class="stat-cards">' +
-      '<div class="stat-card glass"><div class="sc-val">'+totalTasks+'</div><div class="sc-label">진행 중인 할 일</div></div>' +
-      '<div class="stat-card glass"><div class="sc-val">'+totalDone+'</div><div class="sc-label">총 완료 횟수</div></div>' +
-      '<div class="stat-card glass"><div class="sc-val">'+successRate+'%</div><div class="sc-label">이번 주 완료율</div></div>' +
-      '<div class="stat-card glass"><div class="sc-val" style="font-size:14px;">'+(best?escapeHtml(best.name):'-')+'</div><div class="sc-label">가장 꾸준한 습관</div></div>' +
-    '</div>';
-
-    state.tasks.forEach(function(task){
-      html += '<div class="heatmap-wrap">';
-      html += '<div class="heatmap-title"><span>'+escapeHtml(task.emoji||"📌")+'</span><span>'+escapeHtml(task.name)+'</span></div>';
-      html += '<div class="heatmap">' + buildHeatmapCells(task) + '</div>';
-      html += '</div>';
-    });
-    return html;
-  }
-
-  function buildHeatmapCells(task){
-    var t = todayStr();
-    var start = addDays(t, -62);
-    var startD = parseLocal(start);
-    startD.setDate(startD.getDate() - startD.getDay());
-    start = fmt(startD);
-    var historySet = {};
-    (task.history||[]).forEach(function(d){ historySet[d] = true; });
-
-    var html = "";
-    var d = start;
-    var guard = 0;
-    while(d <= t && guard < 100){
-      var cls = "heatmap-cell" + (historySet[d] ? " done" : "") + (d === t ? " is-today" : "");
-      html += '<div class="'+cls+'"></div>';
-      d = addDays(d, 1);
-      guard++;
-    }
-    return html;
+    listEl.innerHTML = html;
   }
 
   document.addEventListener("click", function(e){
@@ -876,6 +881,10 @@
     if(checkEl){ toggleDone(checkEl.getAttribute("data-check"), checkEl); return; }
     var editEl = e.target.closest("[data-edit]");
     if(editEl){ openSheet(editEl.getAttribute("data-edit")); return; }
+    var habitToggle = e.target.closest("[data-toggle-habit]");
+    if(habitToggle){ toggleHabitDate(habitToggle.getAttribute("data-toggle-habit"), habitToggle.getAttribute("data-toggle-date")); return; }
+    var habitEdit = e.target.closest("[data-edit-habit]");
+    if(habitEdit){ openHabitSheet(habitEdit.getAttribute("data-edit-habit")); return; }
   });
 
   document.querySelectorAll("#calModeToggle .mode-btn").forEach(function(btn){
@@ -941,15 +950,23 @@
     document.getElementById("statsView").hidden = tab !== "stats";
     document.getElementById("tabHomeBtn").classList.toggle("active", tab === "home");
     document.getElementById("tabStatsBtn").classList.toggle("active", tab === "stats");
-    document.getElementById("fabBtn").hidden = tab !== "home";
-    if(tab === "stats") renderStats(); else render();
+    if(tab === "stats") renderHabits(); else render();
   }
-  document.querySelectorAll("#statsModeToggle .mode-btn").forEach(function(btn){
-    btn.addEventListener("click", function(){
-      state.statsMode = btn.getAttribute("data-smode");
-      renderStats();
-    });
+  document.getElementById("fabBtn").addEventListener("click", function(){
+    if(state.activeTab === "stats") openHabitSheet(null);
+    else openSheet(null);
   });
+
+  async function toggleHabitDate(habitId, dateStr){
+    var habit = state.habits.find(function(h){ return h.id === habitId; });
+    if(!habit) return;
+    habit.checked = habit.checked || [];
+    var idx = habit.checked.indexOf(dateStr);
+    if(idx !== -1) habit.checked.splice(idx, 1);
+    else habit.checked.push(dateStr);
+    await saveHabits();
+    renderHabits();
+  }
 
   var sheetOverlay = document.getElementById("sheetOverlay");
   var emojiPicksEl = document.getElementById("emojiPicks");
@@ -992,6 +1009,14 @@
     });
     document.getElementById("customDaysRow").hidden = state.selectedType !== "custom";
     document.getElementById("deleteButtons").hidden = !task;
+    var rescheduleLabel = document.getElementById("rescheduleLabel");
+    var rescheduleInput = document.getElementById("rescheduleInput");
+    if(task && state.editingContextDate){
+      rescheduleLabel.hidden = false; rescheduleInput.hidden = false;
+      rescheduleInput.value = state.editingContextDate;
+    } else {
+      rescheduleLabel.hidden = true; rescheduleInput.hidden = true; rescheduleInput.value = "";
+    }
     var statLine = document.getElementById("statLine");
     if(task){ statLine.hidden = false; statLine.textContent = "지금까지 총 " + (task.history||[]).length + "번 완료했어요."; }
     else { statLine.hidden = true; }
@@ -1000,7 +1025,6 @@
   }
   function closeSheet(){ sheetOverlay.hidden = true; state.editingId = null; state.editingContextDate = null; }
 
-  document.getElementById("fabBtn").addEventListener("click", function(){ openSheet(null); });
   document.getElementById("emptyAddBtn").addEventListener("click", function(){ openSheet(null); });
   document.getElementById("cancelBtn").addEventListener("click", closeSheet);
   sheetOverlay.addEventListener("click", function(e){ if(e.target === sheetOverlay) closeSheet(); });
@@ -1016,12 +1040,28 @@
       var task = state.tasks.find(function(tk){ return tk.id === state.editingId; });
       task.name = name; task.emoji = emoji; task.type = state.selectedType;
       if(state.selectedType === "custom") task.interval = interval;
+
+      var rescheduleInput = document.getElementById("rescheduleInput");
+      if(!rescheduleInput.hidden && rescheduleInput.value && state.editingContextDate && rescheduleInput.value !== state.editingContextDate){
+        var oldDate = state.editingContextDate;
+        var newDate = rescheduleInput.value;
+        task.skipped = task.skipped || [];
+        if(task.skipped.indexOf(oldDate) === -1) task.skipped.push(oldDate);
+        task.extraDates = task.extraDates || [];
+        if(task.extraDates.indexOf(newDate) === -1) task.extraDates.push(newDate);
+        // if the date being moved was the one just completed today, move that completion too
+        var hIdx = (task.history||[]).indexOf(oldDate);
+        if(hIdx !== -1){
+          task.history[hIdx] = newDate;
+          if(task.lastDone === oldDate) task.lastDone = newDate;
+        }
+      }
     } else {
       state.tasks.push({
         id: "t" + Date.now() + Math.random().toString(36).slice(2,7),
         name: name, emoji: emoji, type: state.selectedType,
         interval: state.selectedType === "custom" ? interval : null,
-        lastDone: null, history: [], skipped: [], createdAt: state.selectedDate || todayStr()
+        lastDone: null, history: [], skipped: [], extraDates: [], createdAt: state.selectedDate || todayStr()
       });
     }
     await saveTasks();
@@ -1084,8 +1124,96 @@
     render();
   });
 
+  // ---------- habit sheet ----------
+  var habitSheetOverlay = document.getElementById("habitSheetOverlay");
+  var habitEmojiPicksEl = document.getElementById("habitEmojiPicks");
+  HABIT_EMOJI_CHOICES.forEach(function(em){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "emoji-pick"; b.textContent = em;
+    b.addEventListener("click", function(){ document.getElementById("habitEmojiInput").value = em; });
+    habitEmojiPicksEl.appendChild(b);
+  });
+  document.querySelectorAll("#habitDurationSeg .seg-btn").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      state.habitDuration = parseInt(btn.getAttribute("data-duration"), 10);
+      document.querySelectorAll("#habitDurationSeg .seg-btn").forEach(function(b){ b.classList.remove("active"); });
+      btn.classList.add("active");
+    });
+  });
+
+  function openHabitSheet(id){
+    state.editingHabitId = id || null;
+    var habit = id ? state.habits.find(function(h){ return h.id === id; }) : null;
+
+    document.getElementById("habitSheetTitle").textContent = habit ? "습관 수정" : "새 습관";
+    document.getElementById("habitEmojiInput").value = habit ? (habit.emoji||"") : "";
+    document.getElementById("habitNameInput").value = habit ? habit.name : "";
+    state.habitDuration = habit ? habit.duration : 7;
+    document.querySelectorAll("#habitDurationSeg .seg-btn").forEach(function(b){
+      b.classList.toggle("active", parseInt(b.getAttribute("data-duration"),10) === state.habitDuration);
+    });
+    document.getElementById("habitStartInput").value = habit ? habit.startDate : todayStr();
+    document.getElementById("habitDeleteBtn").hidden = !habit;
+    var statLine = document.getElementById("habitStatLine");
+    if(habit){
+      var checkedCount = (habit.checked||[]).length;
+      statLine.hidden = false;
+      statLine.textContent = "지금까지 " + checkedCount + "일 체크했어요.";
+    } else {
+      statLine.hidden = true;
+    }
+    habitSheetOverlay.hidden = false;
+    setTimeout(function(){ document.getElementById("habitNameInput").focus(); }, 50);
+  }
+  function closeHabitSheet(){ habitSheetOverlay.hidden = true; state.editingHabitId = null; }
+
+  document.getElementById("habitEmptyAddBtn").addEventListener("click", function(){ openHabitSheet(null); });
+  document.getElementById("habitCancelBtn").addEventListener("click", closeHabitSheet);
+  habitSheetOverlay.addEventListener("click", function(e){ if(e.target === habitSheetOverlay) closeHabitSheet(); });
+
+  document.getElementById("habitSaveBtn").addEventListener("click", async function(){
+    var name = document.getElementById("habitNameInput").value.trim();
+    if(!name){ showToast("습관 이름을 입력해주세요."); document.getElementById("habitNameInput").focus(); return; }
+    var emoji = document.getElementById("habitEmojiInput").value.trim() || "🔥";
+    var startDate = document.getElementById("habitStartInput").value || todayStr();
+
+    if(state.editingHabitId){
+      var habit = state.habits.find(function(h){ return h.id === state.editingHabitId; });
+      habit.name = name; habit.emoji = emoji; habit.duration = state.habitDuration; habit.startDate = startDate;
+    } else {
+      state.habits.push({
+        id: "h" + Date.now() + Math.random().toString(36).slice(2,7),
+        name: name, emoji: emoji, duration: state.habitDuration, startDate: startDate,
+        checked: []
+      });
+    }
+    await saveHabits();
+    closeHabitSheet();
+    renderHabits();
+    showToast(state.editingHabitId ? "수정했어요." : "새 습관을 등록했어요.");
+  });
+
+  document.getElementById("habitDeleteBtn").addEventListener("click", function(){
+    state.pendingHabitDeleteId = state.editingHabitId;
+    document.getElementById("habitConfirmOverlay").hidden = false;
+  });
+  document.getElementById("habitConfirmCancel").addEventListener("click", function(){
+    document.getElementById("habitConfirmOverlay").hidden = true;
+    state.pendingHabitDeleteId = null;
+  });
+  document.getElementById("habitConfirmOk").addEventListener("click", async function(){
+    state.habits = state.habits.filter(function(h){ return h.id !== state.pendingHabitDeleteId; });
+    document.getElementById("habitConfirmOverlay").hidden = true;
+    state.pendingHabitDeleteId = null;
+    await saveHabits();
+    closeHabitSheet();
+    renderHabits();
+    showToast("삭제했어요.");
+  });
+
   (async function init(){
     await loadTasks();
+    await loadHabits();
     render();
   })();
 
