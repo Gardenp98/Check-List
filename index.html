@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#F3F1FB">
+<meta name="theme-color" content="#FFFFFF">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -17,9 +17,9 @@
     --ink:#241E3D;
     --ink-soft:#726C8C;
     --line: rgba(114,108,140,0.22);
-    --glass: rgba(255,255,255,0.52);
-    --glass-strong: rgba(255,255,255,0.74);
-    --glass-border: rgba(255,255,255,0.65);
+    --glass: rgba(247,247,250,0.92);
+    --glass-strong: rgba(250,250,252,0.96);
+    --glass-border: rgba(20,15,40,0.07);
     --primary1:#8B7CF6;
     --primary2:#45D6C6;
     --gradient: linear-gradient(135deg, var(--primary1), var(--primary2));
@@ -43,19 +43,7 @@
     min-height:100vh;
     display:flex;
     justify-content:center;
-    background:#F3F1FB;
-  }
-  body::before{
-    content:"";
-    position:fixed; inset:-10%;
-    z-index:-1;
-    background:
-      radial-gradient(circle at 18% 20%, rgba(139,124,246,0.45), transparent 42%),
-      radial-gradient(circle at 84% 12%, rgba(69,214,198,0.42), transparent 45%),
-      radial-gradient(circle at 22% 88%, rgba(244,183,64,0.30), transparent 45%),
-      radial-gradient(circle at 90% 82%, rgba(242,97,122,0.26), transparent 45%),
-      #F3F1FB;
-    filter: blur(50px);
+    background:#FFFFFF;
   }
   .app{
     width:100%;
@@ -469,6 +457,7 @@
   var HABIT_STORAGE_KEY = "habit-tracker-v1";
   var EMOJI_CHOICES = ["💧","🧹","🧺","🪥","💊","🚗","📚","🌱","🐾","🧼","💳","🧾","🛏️","🍽️"];
   var HABIT_EMOJI_CHOICES = ["🔥","💪","🏃","📖","🧘","💧","🚭","🥗","😴","✍️","🎯","🎸"];
+  var HABIT_COLORS = ["#F2A0C4","#8FB8F0","#8FD8AC","#F4CE73","#C2A8F0","#F3AE7E","#7FD1C9","#F2969C"];
   var WEEKDAYS = ["일요일","월요일","화요일","수요일","목요일","금요일","토요일"];
   var WEEKDAYS_SHORT = ["일","월","화","수","목","금","토"];
 
@@ -843,7 +832,8 @@
     emptyEl.hidden = true;
     var t = todayStr();
     var html = "";
-    state.habits.forEach(function(habit){
+    state.habits.forEach(function(habit, habitIdx){
+      var color = habit.color || HABIT_COLORS[habitIdx % HABIT_COLORS.length];
       var dates = habitDates(habit);
       var checkedCount = dates.filter(function(d){ return (habit.checked||[]).indexOf(d) !== -1; }).length;
       var pct = Math.round((checkedCount / habit.duration) * 100);
@@ -852,14 +842,15 @@
         '<span class="re-emoji">'+escapeHtml(habit.emoji||"🔥")+'</span>' +
         '<span class="re-name">'+escapeHtml(habit.name)+'</span>' +
         '<span class="habit-progress-badge">'+checkedCount+'/'+habit.duration+'일</span></div>';
-      html += '<div class="habit-bar-track"><div class="habit-bar-fill" style="width:'+pct+'%;"></div></div>';
+      html += '<div class="habit-bar-track"><div class="habit-bar-fill" style="width:'+pct+'%; background:'+color+';"></div></div>';
       html += '<div class="day-grid '+(habit.duration===7?'days-7':'')+'">';
       dates.forEach(function(d, idx){
         var isDone = (habit.checked||[]).indexOf(d) !== -1;
         var isFuture = d > t;
         var isToday = d === t;
-        var cls = "day-cell" + (isDone?" done":"") + (isToday?" is-today":"") + (isFuture?" future":"");
-        html += '<div class="'+cls+'" '+(isFuture?'':'data-toggle-habit="'+habit.id+'" data-toggle-date="'+d+'"')+'>'+(isDone?'✓':(idx+1))+'</div>';
+        var cls = "day-cell" + (isToday?" is-today":"") + (isFuture?" future":"");
+        var styleAttr = isDone ? ' style="background:'+color+'; color:#fff;"' : "";
+        html += '<div class="'+cls+'"'+styleAttr+' '+(isFuture?'':'data-toggle-habit="'+habit.id+'" data-toggle-date="'+d+'"')+'>'+(isDone?'✓':(idx+1))+'</div>';
       });
       html += '</div></div>';
     });
@@ -1184,6 +1175,7 @@
       state.habits.push({
         id: "h" + Date.now() + Math.random().toString(36).slice(2,7),
         name: name, emoji: emoji, duration: state.habitDuration, startDate: startDate,
+        color: HABIT_COLORS[state.habits.length % HABIT_COLORS.length],
         checked: []
       });
     }
