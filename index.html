@@ -293,6 +293,28 @@
   .day-cell.is-today{ box-shadow:0 0 0 1.5px var(--primary1); }
   .day-cell.future{ background:transparent; border:1.5px dashed var(--line); color:var(--line); cursor:default; }
 
+  /* ---------- Plain checklist (folders) ---------- */
+  .folder-card{
+    display:flex; align-items:center; gap:12px; border-radius:18px; padding:14px 16px; margin-bottom:12px; cursor:pointer;
+  }
+  .folder-card .folder-emoji{ font-size:22px; }
+  .folder-card .folder-name{ flex:1; font-size:15px; font-weight:700; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .folder-card .folder-badge{ font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px; background:rgba(139,124,246,0.16); color:var(--primary1); flex-shrink:0; }
+  .folder-card .folder-arrow{ color:var(--ink-soft); font-size:16px; flex-shrink:0; }
+
+  .quick-add-row{ display:flex; gap:8px; margin: 4px 0 16px; }
+  .quick-add-row input{ flex:1; }
+
+  .item-row{ display:flex; align-items:center; gap:10px; border-radius:16px; padding:12px 14px; margin-bottom:10px; }
+  .item-check{
+    width:26px;height:26px;border-radius:50%; border:2px solid var(--ink-soft); flex-shrink:0;
+    display:flex;align-items:center;justify-content:center; color:transparent; font-size:14px; cursor:pointer;
+  }
+  .item-row.done .item-check{ border-color:transparent; background:var(--success); color:#fff; }
+  .item-name{ flex:1; font-size:14.5px; font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .item-row.done .item-name{ color:var(--ink-soft); text-decoration:line-through; text-decoration-color:var(--line); }
+  .item-delete{ width:28px;height:28px;border-radius:50%; background:transparent; border:none; color:var(--ink-soft); font-size:16px; cursor:pointer; flex-shrink:0; }
+
   @media (prefers-reduced-motion: reduce){
     .stamp-pop.playing{ animation:none; opacity:1; }
     .fab:active{ transform:none; }
@@ -355,6 +377,36 @@
       <button class="btn cta" id="habitEmptyAddBtn">+ 첫 습관 만들기</button>
     </div>
   </div>
+
+  <div id="checklistView" hidden>
+    <div id="folderListWrap">
+      <div class="selected-date-title" style="margin-top:0;">체크리스트</div>
+      <div class="selected-date-sub">날짜와 상관없이 폴더별로 관리해요</div>
+      <div id="folderList"></div>
+      <div class="empty glass" id="folderEmpty" hidden style="border-radius:20px;">
+        <div class="glyph">📋</div>
+        <h3>아직 폴더가 없어요</h3>
+        <p>장보기, 여행 준비처럼<br>주제별 폴더를 만들어보세요.</p>
+        <button class="btn cta" id="folderEmptyAddBtn">+ 첫 폴더 만들기</button>
+      </div>
+    </div>
+    <div id="folderItemsWrap" hidden>
+      <div class="cal-topbar">
+        <button class="nav-btn" id="folderBackBtn" aria-label="뒤로">‹</button>
+        <div class="cal-month-label" id="folderItemsTitle" style="flex:1; text-align:center;">폴더</div>
+        <button class="nav-btn" id="folderEditBtn" aria-label="폴더 편집">⋯</button>
+      </div>
+      <div class="quick-add-row">
+        <input type="text" id="quickAddInput" placeholder="할 일 추가하고 Enter">
+        <button class="btn cta" id="quickAddBtn" style="flex-shrink:0;">추가</button>
+      </div>
+      <div id="folderItemList"></div>
+      <div class="empty glass" id="folderItemsEmpty" hidden style="border-radius:20px;">
+        <div class="glyph">✅</div>
+        <p style="margin:0;">아직 이 폴더에 할 일이 없어요.</p>
+      </div>
+    </div>
+  </div>
 </div>
 
 <button class="fab btn" id="fabBtn" aria-label="추가">+</button>
@@ -365,6 +417,9 @@
   </button>
   <button class="tab-btn" id="tabStatsBtn" data-tab="stats">
     <span class="tab-icon">🔥</span><span>습관</span>
+  </button>
+  <button class="tab-btn" id="tabChecklistBtn" data-tab="checklist">
+    <span class="tab-icon">📋</span><span>목록</span>
   </button>
 </nav>
 
@@ -438,7 +493,36 @@
   </div>
 </div>
 
+<div class="overlay" id="folderSheetOverlay" hidden>
+  <div class="sheet" id="folderSheet">
+    <div class="sheet-handle"></div>
+    <h2 id="folderSheetTitle">새 폴더</h2>
+    <label class="field-label">이름</label>
+    <div class="row-input">
+      <input type="text" id="folderEmojiInput" class="emoji-field" maxlength="4" placeholder="📁">
+      <input type="text" id="folderNameInput" placeholder="예: 장보기 목록" maxlength="24">
+    </div>
+    <div class="emoji-picks" id="folderEmojiPicks"></div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" id="folderCancelBtn">취소</button>
+      <button class="btn cta" id="folderSaveBtn">저장</button>
+    </div>
+    <button class="btn btn-ghost" id="folderDeleteBtn" hidden style="width:100%; margin-top:12px; color:var(--danger-deep); border-color:var(--danger-deep);">이 폴더 삭제하기</button>
+  </div>
+</div>
+
+<div class="overlay" id="folderConfirmOverlay" hidden>
+  <div class="confirm-box">
+    <p>이 폴더를 삭제할까요?<br>안에 담긴 할 일도 모두 사라져요.</p>
+    <div class="confirm-actions">
+      <button class="confirm-cancel" id="folderConfirmCancel">취소</button>
+      <button class="confirm-ok" id="folderConfirmOk">삭제</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="confirmOverlay" hidden>
+
   <div class="confirm-box">
     <p id="confirmMsg">이 할 일을 삭제할까요?<br>기록도 함께 사라져요.</p>
     <div class="confirm-actions">
@@ -455,9 +539,11 @@
   "use strict";
   var STORAGE_KEY = "recurring-tasks-v1";
   var HABIT_STORAGE_KEY = "habit-tracker-v1";
+  var FOLDER_STORAGE_KEY = "plain-checklist-v1";
   var EMOJI_CHOICES = ["💧","🧹","🧺","🪥","💊","🚗","📚","🌱","🐾","🧼","💳","🧾","🛏️","🍽️"];
   var HABIT_EMOJI_CHOICES = ["🔥","💪","🏃","📖","🧘","💧","🚭","🥗","😴","✍️","🎯","🎸"];
   var HABIT_COLORS = ["#F2A0C4","#8FB8F0","#8FD8AC","#F4CE73","#C2A8F0","#F3AE7E","#7FD1C9","#F2969C"];
+  var FOLDER_EMOJI_CHOICES = ["📁","🛒","✈️","💼","🏠","🎓","🎁","🧾","📌","🧳","💡","📦"];
   var WEEKDAYS = ["일요일","월요일","화요일","수요일","목요일","금요일","토요일"];
   var WEEKDAYS_SHORT = ["일","월","화","수","목","금","토"];
 
@@ -465,6 +551,7 @@
   var state = {
     tasks: [],
     habits: [],
+    folders: [],
     editingId: null,
     editingContextDate: null,
     pendingAction: null,
@@ -476,7 +563,11 @@
     activeTab: "home",
     editingHabitId: null,
     habitDuration: 7,
-    pendingHabitDeleteId: null
+    pendingHabitDeleteId: null,
+    checklistView: "folders",
+    activeFolderId: null,
+    editingFolderId: null,
+    pendingFolderDeleteId: null
   };
 
   function pad(n){ return n<10 ? "0"+n : ""+n; }
@@ -568,27 +659,36 @@
 
   async function loadTasks(){
     try{
-      var res = await window.storage.get(STORAGE_KEY, false);
-      state.tasks = (res && res.value) ? JSON.parse(res.value) : [];
+      var raw = localStorage.getItem(STORAGE_KEY);
+      state.tasks = raw ? JSON.parse(raw) : [];
     }catch(e){ state.tasks = []; }
   }
   async function saveTasks(){
     try{
-      var res = await window.storage.set(STORAGE_KEY, JSON.stringify(state.tasks), false);
-      if(!res) showToast("저장에 실패했어요. 다시 시도해주세요.");
-    }catch(e){ showToast("저장에 실패했어요. 다시 시도해주세요."); }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks));
+    }catch(e){ showToast("저장 실패: " + (e && e.name ? e.name : e)); }
   }
   async function loadHabits(){
     try{
-      var res = await window.storage.get(HABIT_STORAGE_KEY, false);
-      state.habits = (res && res.value) ? JSON.parse(res.value) : [];
+      var raw = localStorage.getItem(HABIT_STORAGE_KEY);
+      state.habits = raw ? JSON.parse(raw) : [];
     }catch(e){ state.habits = []; }
   }
   async function saveHabits(){
     try{
-      var res = await window.storage.set(HABIT_STORAGE_KEY, JSON.stringify(state.habits), false);
-      if(!res) showToast("저장에 실패했어요. 다시 시도해주세요.");
-    }catch(e){ showToast("저장에 실패했어요. 다시 시도해주세요."); }
+      localStorage.setItem(HABIT_STORAGE_KEY, JSON.stringify(state.habits));
+    }catch(e){ showToast("저장 실패: " + (e && e.name ? e.name : e)); }
+  }
+  async function loadFolders(){
+    try{
+      var raw = localStorage.getItem(FOLDER_STORAGE_KEY);
+      state.folders = raw ? JSON.parse(raw) : [];
+    }catch(e){ state.folders = []; }
+  }
+  async function saveFolders(){
+    try{
+      localStorage.setItem(FOLDER_STORAGE_KEY, JSON.stringify(state.folders));
+    }catch(e){ showToast("저장 실패: " + (e && e.name ? e.name : e)); }
   }
 
   var toastEl = document.getElementById("toast");
@@ -815,6 +915,93 @@
     listArea.innerHTML = html;
   }
 
+  function renderChecklist(){
+    var listWrap = document.getElementById("folderListWrap");
+    var itemsWrap = document.getElementById("folderItemsWrap");
+    if(state.checklistView === "items" && state.activeFolderId){
+      listWrap.hidden = true; itemsWrap.hidden = false;
+      renderFolderItems();
+    } else {
+      listWrap.hidden = false; itemsWrap.hidden = true;
+      renderFolderList();
+    }
+  }
+
+  function renderFolderList(){
+    var listEl = document.getElementById("folderList");
+    var emptyEl = document.getElementById("folderEmpty");
+    if(state.folders.length === 0){ listEl.innerHTML = ""; emptyEl.hidden = false; return; }
+    emptyEl.hidden = true;
+    var html = "";
+    state.folders.forEach(function(folder){
+      var items = folder.items || [];
+      var doneCount = items.filter(function(i){ return i.done; }).length;
+      html += '<div class="folder-card glass" data-open-folder="'+folder.id+'">' +
+        '<span class="folder-emoji">'+escapeHtml(folder.emoji||"📁")+'</span>' +
+        '<span class="folder-name">'+escapeHtml(folder.name)+'</span>' +
+        '<span class="folder-badge">'+doneCount+'/'+items.length+'</span>' +
+        '<span class="folder-arrow">›</span></div>';
+    });
+    listEl.innerHTML = html;
+  }
+
+  function renderFolderItems(){
+    var folder = state.folders.find(function(f){ return f.id === state.activeFolderId; });
+    if(!folder){ state.checklistView = "folders"; state.activeFolderId = null; renderChecklist(); return; }
+    document.getElementById("folderItemsTitle").textContent = (folder.emoji||"📁") + " " + folder.name;
+    var items = folder.items || [];
+    var listEl = document.getElementById("folderItemList");
+    var emptyEl = document.getElementById("folderItemsEmpty");
+    if(items.length === 0){
+      listEl.innerHTML = "";
+      emptyEl.hidden = false;
+    } else {
+      emptyEl.hidden = true;
+      var html = "";
+      items.forEach(function(item){
+        html += '<div class="item-row glass'+(item.done?' done':'')+'">' +
+          '<div class="item-check" data-toggle-item="'+folder.id+'|'+item.id+'">✓</div>' +
+          '<span class="item-name">'+escapeHtml(item.name)+'</span>' +
+          '<button class="item-delete" data-delete-item="'+folder.id+'|'+item.id+'">✕</button>' +
+          '</div>';
+      });
+      listEl.innerHTML = html;
+    }
+  }
+
+  async function toggleItemDone(folderId, itemId){
+    var folder = state.folders.find(function(f){ return f.id === folderId; });
+    if(!folder) return;
+    var item = (folder.items||[]).find(function(i){ return i.id === itemId; });
+    if(!item) return;
+    item.done = !item.done;
+    await saveFolders();
+    renderFolderItems();
+    renderFolderList();
+  }
+  async function deleteItem(folderId, itemId){
+    var folder = state.folders.find(function(f){ return f.id === folderId; });
+    if(!folder) return;
+    folder.items = (folder.items||[]).filter(function(i){ return i.id !== itemId; });
+    await saveFolders();
+    renderFolderItems();
+    renderFolderList();
+  }
+  async function addQuickItem(){
+    var input = document.getElementById("quickAddInput");
+    var name = input.value.trim();
+    if(!name) return;
+    var folder = state.folders.find(function(f){ return f.id === state.activeFolderId; });
+    if(!folder) return;
+    folder.items = folder.items || [];
+    folder.items.push({ id: "i"+Date.now()+Math.random().toString(36).slice(2,7), name: name, done: false });
+    input.value = "";
+    await saveFolders();
+    renderFolderItems();
+    renderFolderList();
+    input.focus();
+  }
+
   function habitDates(habit){
     var dates = [];
     for(var i=0;i<habit.duration;i++) dates.push(addDays(habit.startDate, i));
@@ -876,6 +1063,25 @@
     if(habitToggle){ toggleHabitDate(habitToggle.getAttribute("data-toggle-habit"), habitToggle.getAttribute("data-toggle-date")); return; }
     var habitEdit = e.target.closest("[data-edit-habit]");
     if(habitEdit){ openHabitSheet(habitEdit.getAttribute("data-edit-habit")); return; }
+    var openFolder = e.target.closest("[data-open-folder]");
+    if(openFolder){
+      state.activeFolderId = openFolder.getAttribute("data-open-folder");
+      state.checklistView = "items";
+      renderChecklist();
+      return;
+    }
+    var toggleItem = e.target.closest("[data-toggle-item]");
+    if(toggleItem){
+      var parts = toggleItem.getAttribute("data-toggle-item").split("|");
+      toggleItemDone(parts[0], parts[1]);
+      return;
+    }
+    var deleteItemBtn = e.target.closest("[data-delete-item]");
+    if(deleteItemBtn){
+      var parts2 = deleteItemBtn.getAttribute("data-delete-item").split("|");
+      deleteItem(parts2[0], parts2[1]);
+      return;
+    }
   });
 
   document.querySelectorAll("#calModeToggle .mode-btn").forEach(function(btn){
@@ -935,16 +1141,25 @@
 
   document.getElementById("tabHomeBtn").addEventListener("click", function(){ switchTab("home"); });
   document.getElementById("tabStatsBtn").addEventListener("click", function(){ switchTab("stats"); });
+  document.getElementById("tabChecklistBtn").addEventListener("click", function(){ switchTab("checklist"); });
   function switchTab(tab){
     state.activeTab = tab;
     document.getElementById("homeView").hidden = tab !== "home";
     document.getElementById("statsView").hidden = tab !== "stats";
+    document.getElementById("checklistView").hidden = tab !== "checklist";
     document.getElementById("tabHomeBtn").classList.toggle("active", tab === "home");
     document.getElementById("tabStatsBtn").classList.toggle("active", tab === "stats");
-    if(tab === "stats") renderHabits(); else render();
+    document.getElementById("tabChecklistBtn").classList.toggle("active", tab === "checklist");
+    if(tab === "stats") renderHabits();
+    else if(tab === "checklist") renderChecklist();
+    else render();
   }
   document.getElementById("fabBtn").addEventListener("click", function(){
     if(state.activeTab === "stats") openHabitSheet(null);
+    else if(state.activeTab === "checklist"){
+      if(state.checklistView === "items") document.getElementById("quickAddInput").focus();
+      else openFolderSheet(null);
+    }
     else openSheet(null);
   });
 
@@ -1203,9 +1418,91 @@
     showToast("삭제했어요.");
   });
 
+  // ---------- folder sheet ----------
+  var folderSheetOverlay = document.getElementById("folderSheetOverlay");
+  var folderEmojiPicksEl = document.getElementById("folderEmojiPicks");
+  FOLDER_EMOJI_CHOICES.forEach(function(em){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "emoji-pick"; b.textContent = em;
+    b.addEventListener("click", function(){ document.getElementById("folderEmojiInput").value = em; });
+    folderEmojiPicksEl.appendChild(b);
+  });
+
+  function openFolderSheet(id){
+    state.editingFolderId = id || null;
+    var folder = id ? state.folders.find(function(f){ return f.id === id; }) : null;
+    document.getElementById("folderSheetTitle").textContent = folder ? "폴더 수정" : "새 폴더";
+    document.getElementById("folderEmojiInput").value = folder ? (folder.emoji||"") : "";
+    document.getElementById("folderNameInput").value = folder ? folder.name : "";
+    document.getElementById("folderDeleteBtn").hidden = !folder;
+    folderSheetOverlay.hidden = false;
+    setTimeout(function(){ document.getElementById("folderNameInput").focus(); }, 50);
+  }
+  function closeFolderSheet(){ folderSheetOverlay.hidden = true; state.editingFolderId = null; }
+
+  document.getElementById("folderEmptyAddBtn").addEventListener("click", function(){ openFolderSheet(null); });
+  document.getElementById("folderCancelBtn").addEventListener("click", closeFolderSheet);
+  folderSheetOverlay.addEventListener("click", function(e){ if(e.target === folderSheetOverlay) closeFolderSheet(); });
+
+  document.getElementById("folderSaveBtn").addEventListener("click", async function(){
+    var name = document.getElementById("folderNameInput").value.trim();
+    if(!name){ showToast("폴더 이름을 입력해주세요."); document.getElementById("folderNameInput").focus(); return; }
+    var emoji = document.getElementById("folderEmojiInput").value.trim() || "📁";
+
+    if(state.editingFolderId){
+      var folder = state.folders.find(function(f){ return f.id === state.editingFolderId; });
+      folder.name = name; folder.emoji = emoji;
+    } else {
+      state.folders.push({
+        id: "f" + Date.now() + Math.random().toString(36).slice(2,7),
+        name: name, emoji: emoji, items: []
+      });
+    }
+    await saveFolders();
+    closeFolderSheet();
+    renderChecklist();
+    showToast(state.editingFolderId ? "수정했어요." : "새 폴더를 만들었어요.");
+  });
+
+  document.getElementById("folderDeleteBtn").addEventListener("click", function(){
+    state.pendingFolderDeleteId = state.editingFolderId;
+    document.getElementById("folderConfirmOverlay").hidden = false;
+  });
+  document.getElementById("folderConfirmCancel").addEventListener("click", function(){
+    document.getElementById("folderConfirmOverlay").hidden = true;
+    state.pendingFolderDeleteId = null;
+  });
+  document.getElementById("folderConfirmOk").addEventListener("click", async function(){
+    state.folders = state.folders.filter(function(f){ return f.id !== state.pendingFolderDeleteId; });
+    if(state.activeFolderId === state.pendingFolderDeleteId){
+      state.activeFolderId = null;
+      state.checklistView = "folders";
+    }
+    document.getElementById("folderConfirmOverlay").hidden = true;
+    state.pendingFolderDeleteId = null;
+    await saveFolders();
+    closeFolderSheet();
+    renderChecklist();
+    showToast("삭제했어요.");
+  });
+
+  document.getElementById("folderBackBtn").addEventListener("click", function(){
+    state.checklistView = "folders";
+    state.activeFolderId = null;
+    renderChecklist();
+  });
+  document.getElementById("folderEditBtn").addEventListener("click", function(){
+    openFolderSheet(state.activeFolderId);
+  });
+  document.getElementById("quickAddBtn").addEventListener("click", addQuickItem);
+  document.getElementById("quickAddInput").addEventListener("keydown", function(e){
+    if(e.key === "Enter") addQuickItem();
+  });
+
   (async function init(){
     await loadTasks();
     await loadHabits();
+    await loadFolders();
     render();
   })();
 
