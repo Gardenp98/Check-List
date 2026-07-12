@@ -1,4 +1,4 @@
-const CACHE_NAME = "check-app-v10";
+const CACHE_NAME = "check-app-v11";
 const ASSETS = [
   "./",
   "./index.html",
