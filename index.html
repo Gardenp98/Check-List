@@ -101,8 +101,8 @@
   .cal-cell.muted{ color:#B7B0CC; }
   .cal-cell.holiday{ color:var(--danger); }
   .cal-cell.muted.holiday{ color:#E3B3BE; }
-  .cal-cell.today{ background:var(--primary1); color:var(--gradient-text); }
-  .cal-cell.selected{ background:transparent; box-shadow: inset 0 0 0 2px var(--ink); }
+  .cal-cell.today{ background:rgba(var(--accent-rgb),0.7); color:var(--ink); }
+  .cal-cell.selected{ background:transparent; box-shadow: inset 0 0 0 2px #9CEBE0; }
   .cal-dotrow{ display:flex; gap:2px; height:5px; }
   .cal-dot{ width:4px;height:4px;border-radius:50%; background:var(--success); }
   .cal-dot.scheduled{ background:var(--mustard); }
@@ -117,9 +117,9 @@
   .week-pill .wp-day{ font-size:10.5px; font-weight:700; color:var(--ink-soft); }
   .week-pill .wp-date{ font-size:15px; font-weight:800; }
   .week-pill.holiday .wp-day, .week-pill.holiday .wp-date{ color:var(--danger); }
-  .week-pill.today{ background:var(--primary1); }
-  .week-pill.today .wp-day, .week-pill.today .wp-date{ color:var(--gradient-text); }
-  .week-pill.selected{ background:var(--glass); border-color:transparent; box-shadow: inset 0 0 0 2px var(--ink); }
+  .week-pill.today{ background:rgba(var(--accent-rgb),0.7); }
+  .week-pill.today .wp-day, .week-pill.today .wp-date{ color:var(--ink); }
+  .week-pill.selected{ background:var(--glass); border-color:transparent; box-shadow: inset 0 0 0 2px #9CEBE0; }
 
   .progress-row{
     display:flex; align-items:center; gap:10px;
@@ -309,6 +309,24 @@
   .item-name{ flex:1; font-size:14.5px; font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .item-row.done .item-name{ color:var(--ink-soft); text-decoration:line-through; text-decoration-color:var(--line); }
   .item-delete{ width:28px;height:28px;border-radius:50%; background:transparent; border:none; color:var(--ink-soft); font-size:16px; cursor:pointer; flex-shrink:0; }
+
+  /* ---------- Reorder mode ---------- */
+  .reorder-banner{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--ink); color:#fff; border-radius:999px; padding:9px 8px 9px 16px;
+    margin-bottom:12px; font-size:12.5px; font-weight:700;
+  }
+  .reorder-banner button{
+    background:rgba(255,255,255,0.18); color:#fff; border:none; border-radius:999px;
+    padding:7px 14px; font-size:12.5px; font-weight:700; cursor:pointer;
+  }
+  .reorder-controls{ display:flex; flex-direction:column; gap:3px; flex-shrink:0; }
+  .reorder-controls button{
+    width:30px; height:22px; border-radius:8px; background:var(--glass); border:1px solid var(--glass-border);
+    color:var(--ink); font-size:11px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .reorder-controls button:disabled{ opacity:0.3; cursor:default; }
+  .reorder-controls button:active:not(:disabled){ background:var(--primary1); }
 
   @media (prefers-reduced-motion: reduce){
     .stamp-pop.playing{ animation:none; opacity:1; }
@@ -563,7 +581,8 @@
     activeFolderId: null,
     editingFolderId: null,
     pendingFolderDeleteId: null,
-    bubbleColor: "#78C6F7"
+    bubbleColor: "#78C6F7",
+    reorderMode: null
   };
 
   function pad(n){ return n<10 ? "0"+n : ""+n; }
@@ -648,6 +667,98 @@
     r = Math.max(0, Math.round(r*(1-amt))); g = Math.max(0, Math.round(g*(1-amt))); b = Math.max(0, Math.round(b*(1-amt)));
     return "#" + [r,g,b].map(function(v){ return v.toString(16).padStart(2,"0"); }).join("");
   }
+
+  // ---------- reorder mode ----------
+  function enterReorderMode(key){
+    var colonIdx = key.indexOf(":");
+    var type = key.slice(0, colonIdx);
+    var rest = key.slice(colonIdx+1);
+    if(type === "task"){
+      state.reorderMode = { type: "task" };
+      render();
+    } else if(type === "habit"){
+      state.reorderMode = { type: "habit" };
+      renderHabits();
+    } else if(type === "folder"){
+      state.reorderMode = { type: "folder" };
+      renderChecklist();
+    } else if(type === "item"){
+      var folderId = rest.split("|")[0];
+      state.reorderMode = { type: "item", folderId: folderId };
+      renderChecklist();
+    }
+    if(navigator.vibrate) navigator.vibrate(15);
+  }
+  function exitReorderMode(){
+    var wasType = state.reorderMode ? state.reorderMode.type : null;
+    state.reorderMode = null;
+    if(wasType === "task") render();
+    else if(wasType === "habit") renderHabits();
+    else if(wasType === "folder" || wasType === "item") renderChecklist();
+  }
+
+  async function moveTaskInDueList(taskId, dir){
+    var t = todayStr();
+    var due = [];
+    state.tasks.forEach(function(task){
+      var due_date = nextDue(task);
+      var doneToday = task.lastDone === t;
+      if(due_date <= t || doneToday) due.push(task);
+    });
+    due.sort(function(a,b){
+      var aDone = a.lastDone === t, bDone = b.lastDone === t;
+      return (aDone?1:0) - (bDone?1:0);
+    });
+    var visIdx = due.findIndex(function(tk){ return tk.id === taskId; });
+    var neighborIdx = visIdx + dir;
+    if(visIdx < 0 || neighborIdx < 0 || neighborIdx >= due.length) return;
+    var a = due[visIdx], b = due[neighborIdx];
+    var realA = state.tasks.indexOf(a), realB = state.tasks.indexOf(b);
+    state.tasks[realA] = b; state.tasks[realB] = a;
+    await saveTasks();
+    render();
+  }
+  async function moveHabit(id, dir){
+    var idx = state.habits.findIndex(function(h){ return h.id === id; });
+    var n = idx + dir;
+    if(idx < 0 || n < 0 || n >= state.habits.length) return;
+    var tmp = state.habits[idx]; state.habits[idx] = state.habits[n]; state.habits[n] = tmp;
+    await saveHabits();
+    renderHabits();
+  }
+  async function moveFolder(id, dir){
+    var idx = state.folders.findIndex(function(f){ return f.id === id; });
+    var n = idx + dir;
+    if(idx < 0 || n < 0 || n >= state.folders.length) return;
+    var tmp = state.folders[idx]; state.folders[idx] = state.folders[n]; state.folders[n] = tmp;
+    await saveFolders();
+    renderChecklist();
+  }
+  async function moveItem(folderId, itemId, dir){
+    var folder = state.folders.find(function(f){ return f.id === folderId; });
+    if(!folder) return;
+    var items = folder.items || [];
+    var idx = items.findIndex(function(i){ return i.id === itemId; });
+    var n = idx + dir;
+    if(idx < 0 || n < 0 || n >= items.length) return;
+    var tmp = items[idx]; items[idx] = items[n]; items[n] = tmp;
+    await saveFolders();
+    renderChecklist();
+  }
+
+  function handleMoveClick(key, dir){
+    var colonIdx = key.indexOf(":");
+    var type = key.slice(0, colonIdx);
+    var rest = key.slice(colonIdx+1);
+    if(type === "task") moveTaskInDueList(rest, dir);
+    else if(type === "habit") moveHabit(rest, dir);
+    else if(type === "folder") moveFolder(rest, dir);
+    else if(type === "item"){
+      var parts = rest.split("|");
+      moveItem(parts[0], parts[1], dir);
+    }
+  }
+
   function escapeHtml(s){
     return String(s).replace(/[&<>"']/g, function(c){
       return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
@@ -874,8 +985,7 @@
       if(due_date <= t || doneToday) due.push({task:task, due_date:due_date, doneToday:doneToday});
     });
     due.sort(function(a,b){
-      if(a.doneToday !== b.doneToday) return a.doneToday ? 1 : -1;
-      return a.due_date < b.due_date ? -1 : 1;
+      return (a.doneToday?1:0) - (b.doneToday?1:0);
     });
     var doneCount = due.filter(function(x){ return x.doneToday; }).length;
     document.getElementById("progressText").textContent = doneCount + "/" + due.length + " 완료";
@@ -883,29 +993,38 @@
     due.forEach(function(x){ dotsHtml += '<span class="dot ' + (x.doneToday?'on':'') + '"></span>'; });
     document.getElementById("progressDots").innerHTML = dotsHtml;
 
+    var reordering = state.reorderMode && state.reorderMode.type === "task";
+    var banner = reordering ? '<div class="reorder-banner"><span>순서를 변경하세요</span><button data-reorder-done="task">완료</button></div>' : "";
+
     if(due.length === 0){
-      listArea.innerHTML = '<div class="empty glass" style="padding:24px 10px; border-radius:20px;"><div class="glyph">🎉</div><p style="margin:0;">오늘 예정된 할 일이 없어요.</p></div>';
+      listArea.innerHTML = banner + '<div class="empty glass" style="padding:24px 10px; border-radius:20px;"><div class="glyph">🎉</div><p style="margin:0;">오늘 예정된 할 일이 없어요.</p></div>';
       return;
     }
-    var html = "";
-    due.forEach(function(x){
+    var html = banner;
+    due.forEach(function(x, idx){
       var task = x.task;
       var overdueDays = daysBetween(x.due_date, t);
       var metaText, metaClass;
       if(x.doneToday){ metaText = "오늘 완료됨 · " + repeatLabel(task); metaClass = ""; }
       else if(overdueDays > 0){ metaText = overdueDays + "일 지남 · " + repeatLabel(task); metaClass = "overdue"; }
       else { metaText = "오늘 마감 · " + repeatLabel(task); metaClass = "mustard"; }
+      var rightControl = reordering
+        ? '<div class="reorder-controls">' +
+            '<button data-move-up="task:'+task.id+'" '+(idx===0?'disabled':'')+'>▲</button>' +
+            '<button data-move-down="task:'+task.id+'" '+(idx===due.length-1?'disabled':'')+'>▼</button>' +
+          '</div>'
+        : '<div class="ticket-check" data-check="'+task.id+'">' +
+            '<div class="check-circle">✓</div>' +
+            '<div class="stamp-pop">완료</div>' +
+          '</div>';
       html +=
-        '<div class="ticket glass'+(x.doneToday?' done':'')+'">' +
+        '<div class="ticket glass'+(x.doneToday?' done':'')+'" data-reorder-item="task:'+task.id+'">' +
           '<div class="ticket-main" data-edit="'+task.id+'">' +
             '<div class="ticket-title-row"><span class="ticket-emoji">'+escapeHtml(task.emoji||"📌")+'</span>' +
             '<span class="ticket-name">'+escapeHtml(task.name)+'</span></div>' +
             '<div class="ticket-meta '+metaClass+'">'+metaText+'</div>' +
           '</div>' +
-          '<div class="ticket-check" data-check="'+task.id+'">' +
-            '<div class="check-circle">✓</div>' +
-            '<div class="stamp-pop">완료</div>' +
-          '</div>' +
+          rightControl +
         '</div>';
     });
     listArea.innerHTML = html;
@@ -964,15 +1083,18 @@
     var emptyEl = document.getElementById("folderEmpty");
     if(state.folders.length === 0){ listEl.innerHTML = ""; emptyEl.hidden = false; return; }
     emptyEl.hidden = true;
-    var html = "";
-    state.folders.forEach(function(folder){
+    var reordering = state.reorderMode && state.reorderMode.type === "folder";
+    var html = reordering ? '<div class="reorder-banner"><span>순서를 변경하세요</span><button data-reorder-done="folder">완료</button></div>' : "";
+    state.folders.forEach(function(folder, idx){
       var items = folder.items || [];
       var doneCount = items.filter(function(i){ return i.done; }).length;
-      html += '<div class="folder-card glass" data-open-folder="'+folder.id+'">' +
+      html += '<div class="folder-card glass" data-reorder-item="folder:'+folder.id+'" '+(reordering?'':'data-open-folder="'+folder.id+'"')+'>' +
         '<span class="folder-emoji">'+escapeHtml(folder.emoji||"📁")+'</span>' +
         '<span class="folder-name">'+escapeHtml(folder.name)+'</span>' +
-        '<span class="folder-badge">'+doneCount+'/'+items.length+'</span>' +
-        '<span class="folder-arrow">›</span></div>';
+        (reordering
+          ? '<div class="reorder-controls"><button data-move-up="folder:'+folder.id+'" '+(idx===0?'disabled':'')+'>▲</button><button data-move-down="folder:'+folder.id+'" '+(idx===state.folders.length-1?'disabled':'')+'>▼</button></div>'
+          : '<span class="folder-badge">'+doneCount+'/'+items.length+'</span><span class="folder-arrow">›</span>') +
+        '</div>';
     });
     listEl.innerHTML = html;
   }
@@ -989,12 +1111,15 @@
       emptyEl.hidden = false;
     } else {
       emptyEl.hidden = true;
-      var html = "";
-      items.forEach(function(item){
-        html += '<div class="item-row glass'+(item.done?' done':'')+'">' +
-          '<div class="item-check" data-toggle-item="'+folder.id+'|'+item.id+'">✓</div>' +
+      var reordering = state.reorderMode && state.reorderMode.type === "item" && state.reorderMode.folderId === folder.id;
+      var html = reordering ? '<div class="reorder-banner"><span>순서를 변경하세요</span><button data-reorder-done="item">완료</button></div>' : "";
+      items.forEach(function(item, idx){
+        html += '<div class="item-row glass'+(item.done?' done':'')+'" data-reorder-item="item:'+folder.id+'|'+item.id+'">' +
+          (reordering
+            ? '<div class="reorder-controls"><button data-move-up="item:'+folder.id+'|'+item.id+'" '+(idx===0?'disabled':'')+'>▲</button><button data-move-down="item:'+folder.id+'|'+item.id+'" '+(idx===items.length-1?'disabled':'')+'>▼</button></div>'
+            : '<div class="item-check" data-toggle-item="'+folder.id+'|'+item.id+'">✓</div>') +
           '<span class="item-name">'+escapeHtml(item.name)+'</span>' +
-          '<button class="item-delete" data-delete-item="'+folder.id+'|'+item.id+'">✕</button>' +
+          (reordering ? '' : '<button class="item-delete" data-delete-item="'+folder.id+'|'+item.id+'">✕</button>') +
           '</div>';
       });
       listEl.innerHTML = html;
@@ -1050,17 +1175,21 @@
     }
     emptyEl.hidden = true;
     var t = todayStr();
-    var html = "";
+    var reordering = state.reorderMode && state.reorderMode.type === "habit";
+    var html = reordering ? '<div class="reorder-banner"><span>순서를 변경하세요</span><button data-reorder-done="habit">완료</button></div>' : "";
     state.habits.forEach(function(habit, habitIdx){
       var color = habit.color || HABIT_COLORS[habitIdx % HABIT_COLORS.length];
       var dates = habitDates(habit);
       var checkedCount = dates.filter(function(d){ return (habit.checked||[]).indexOf(d) !== -1; }).length;
       var pct = Math.round((checkedCount / habit.duration) * 100);
-      html += '<div class="habit-card glass">';
-      html += '<div class="habit-card-head" data-edit-habit="'+habit.id+'">' +
+      html += '<div class="habit-card glass" data-reorder-item="habit:'+habit.id+'">';
+      html += '<div class="habit-card-head" '+(reordering?'':'data-edit-habit="'+habit.id+'"')+'>' +
         '<span class="re-emoji">'+escapeHtml(habit.emoji||"🔥")+'</span>' +
         '<span class="re-name">'+escapeHtml(habit.name)+'</span>' +
-        '<span class="habit-progress-badge" style="background:'+color+'26; color:'+darkenColor(color,0.42)+';">'+checkedCount+'/'+habit.duration+'일</span></div>';
+        (reordering
+          ? '<div class="reorder-controls"><button data-move-up="habit:'+habit.id+'" '+(habitIdx===0?'disabled':'')+'>▲</button><button data-move-down="habit:'+habit.id+'" '+(habitIdx===state.habits.length-1?'disabled':'')+'>▼</button></div>'
+          : '<span class="habit-progress-badge" style="background:'+color+'26; color:'+darkenColor(color,0.42)+';">'+checkedCount+'/'+habit.duration+'일</span>') +
+        '</div>';
       html += '<div class="habit-bar-track"><div class="habit-bar-fill" style="width:'+pct+'%; background:'+color+';"></div></div>';
       html += '<div class="day-grid '+(habit.duration===7?'days-7':'')+'">';
       dates.forEach(function(d, idx){
@@ -1080,6 +1209,7 @@
   }
 
   document.addEventListener("click", function(e){
+    if(suppressNextClick){ suppressNextClick = false; return; }
     var dateCell = e.target.closest("[data-date]");
     if(dateCell){
       var ds = dateCell.getAttribute("data-date");
@@ -1117,7 +1247,45 @@
       deleteItem(parts2[0], parts2[1]);
       return;
     }
+    var moveUpBtn = e.target.closest("[data-move-up]");
+    if(moveUpBtn){
+      handleMoveClick(moveUpBtn.getAttribute("data-move-up"), -1);
+      return;
+    }
+    var moveDownBtn = e.target.closest("[data-move-down]");
+    if(moveDownBtn){
+      handleMoveClick(moveDownBtn.getAttribute("data-move-down"), 1);
+      return;
+    }
+    var reorderDoneBtn = e.target.closest("[data-reorder-done]");
+    if(reorderDoneBtn){ exitReorderMode(); return; }
   });
+
+  // ---------- long press to enter reorder mode ----------
+  var LONG_PRESS_MS = 480;
+  var lpTimer = null;
+  var lpStartXY = null;
+  var suppressNextClick = false;
+  document.addEventListener("pointerdown", function(e){
+    var el = e.target.closest("[data-reorder-item]");
+    if(!el) return;
+    if(e.target.closest("[data-move-up],[data-move-down],[data-reorder-done]")) return;
+    lpStartXY = { x: e.clientX, y: e.clientY };
+    clearTimeout(lpTimer);
+    lpTimer = setTimeout(function(){
+      lpTimer = null;
+      suppressNextClick = true;
+      enterReorderMode(el.getAttribute("data-reorder-item"));
+    }, LONG_PRESS_MS);
+  });
+  document.addEventListener("pointermove", function(e){
+    if(!lpTimer || !lpStartXY) return;
+    if(Math.abs(e.clientX - lpStartXY.x) > 8 || Math.abs(e.clientY - lpStartXY.y) > 8){
+      clearTimeout(lpTimer); lpTimer = null;
+    }
+  });
+  document.addEventListener("pointerup", function(){ if(lpTimer){ clearTimeout(lpTimer); lpTimer = null; } });
+  document.addEventListener("pointercancel", function(){ if(lpTimer){ clearTimeout(lpTimer); lpTimer = null; } });
 
   document.querySelectorAll("#calModeToggle .mode-btn").forEach(function(btn){
     btn.addEventListener("click", function(){
